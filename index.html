@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Omni-3 Robotics Lab // 3-Wheel Omnidirectional Robot Simulator & Controller</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              900: '#07090e',
+              850: '#0c0f17',
+              800: '#121624',
+              700: '#1c2237',
+              600: '#2a3454',
+              blue: '#0070f3',
+              cyan: '#00f0ff',
+              neonGreen: '#10b981',
+              neonAmber: '#f59e0b',
+              neonRed: '#ef4444',
+            }
+          },
+          boxShadow: {
+            'neon-cyan': '0 0 15px rgba(0, 240, 255, 0.45)',
+            'neon-red': '0 0 20px rgba(239, 68, 68, 0.55)',
+            'neon-green': '0 0 15px rgba(16, 185, 129, 0.45)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Styling & Cyber Aesthetics */
+    body {
+      background-color: #07090e;
+      color: #f1f5f9;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0c0f17;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a3454;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00f0ff;
+    }
+
+    /* Range slider custom styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: #1c2237;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00f0ff;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Virtual D-Pad Buttons */
+    .dpad-btn {
+      background: linear-gradient(145deg, #161b2c, #0f131f);
+      border: 1px solid #232a42;
+      transition: all 0.08s ease;
+      touch-action: none;
+    }
+
+    .dpad-btn:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+    }
+
+    .dpad-btn:active,
+    .dpad-btn.active-key {
+      background: #00f0ff !important;
+      color: #07090e !important;
+      border-color: #00f0ff !important;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.8) !important;
+      transform: scale(0.94);
+    }
+
+    .dpad-btn:active svg,
+    .dpad-btn.active-key svg {
+      stroke: #07090e !important;
+      fill: #07090e !important;
+    }
+
+    /* Emergency Stop Button */
+    .stop-btn {
+      background: radial-gradient(circle, #dc2626, #991b1b);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      transition: all 0.08s ease;
+    }
+
+    .stop-btn:hover {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.7);
+    }
+
+    .stop-btn:active,
+    .stop-btn.active-key {
+      background: radial-gradient(circle, #ef4444, #b91c1c);
+      transform: scale(0.92);
+      box-shadow: 0 0 35px rgba(239, 68, 68, 1);
+    }
+
+    /* Key Badge Highlight */
+    .key-badge {
+      transition: all 0.1s ease;
+    }
+
+    .key-badge.active-key {
+      background: #00f0ff !important;
+      color: #07090e !important;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col font-sans overflow-hidden bg-cyber-900 text-slate-100">
+
+  <!-- ==================== HEADER BAR ==================== -->
+  <header
+    class="h-11 bg-cyber-850 border-b border-cyber-700 px-3 flex items-center justify-between gap-2 shrink-0 z-30 shadow-md">
+    <div class="flex items-center space-x-2.5 min-w-0">
+      <div
+        class="relative flex items-center justify-center w-7 h-7 rounded-lg bg-cyber-800 border border-cyber-cyan/40 shadow-neon-cyan shrink-0">
+        <svg class="w-4 h-4 text-cyber-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9"></circle>
+          <circle cx="12" cy="12" r="3"></circle>
+          <line x1="12" y1="3" x2="12" y2="9"></line>
+          <line x1="4.2" y1="16.5" x2="9.4" y2="13.5"></line>
+          <line x1="19.8" y1="16.5" x2="14.6" y2="13.5"></line>
+        </svg>
+      </div>
+      <div class="flex items-center space-x-2 truncate">
+        <h1 class="font-bold text-sm tracking-wider text-slate-100 uppercase truncate">OMNI-3 ROBOTICS LAB</h1>
+        <span
+          class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan hidden sm:inline-block">SIM
+          &amp; TELEMETRY</span>
+      </div>
+    </div>
+
+    <!-- Live Status & Quick Action Badges -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2 text-xs font-mono shrink-0">
+      <!-- NÚT ENA TRỰC QUAN (KHÓA TRỤC / THẢ TỰ DO ĐỘNG CƠ) -->
+      <button id="btnEnaToggle" title="Bật/Tắt khóa trục động cơ (Enable/Disable)"
+        class="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:brightness-110 transition shadow-neon-green cursor-pointer font-bold text-[11px]">
+        <span id="enaDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="enaText">ENA: KHÓA TRỤC (ON)</span>
+      </button>
+
+      <div id="simModeBadge"
+        class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] hidden md:flex">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="simStatusText">SIM: 60 FPS</span>
+      </div>
+
+      <div id="wsStatusBadge"
+        class="flex items-center space-x-1 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[11px]">
+        <span id="wsStatusDot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+        <span id="wsStatusText">WS: STANDALONE</span>
+      </div>
+
+      <button id="btnOpenWsModal"
+        class="px-2 py-1 rounded bg-cyber-700 hover:bg-cyber-600 border border-cyber-600 text-slate-200 transition text-[11px]">
+        ESP32 ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2 p-2 max-w-[1920px] w-full mx-auto overflow-hidden">
+
+    <!-- ==================== CỘT TRÁI: MÀN HÌNH MÔ PHỎNG CANVAS 2D (7/12 cột) ==================== -->
+    <div
+      class="lg:col-span-7 xl:col-span-7 2xl:col-span-8 flex flex-col bg-cyber-850 rounded-xl border border-cyber-700 overflow-hidden shadow-2xl relative h-full min-h-0">
+
+      <!-- Floating Canvas HUD Top Bar -->
+      <div
+        class="absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between pointer-events-none gap-1.5">
+        <!-- Telemetry Pill: X, Y, Theta, Scale -->
+        <div
+          class="pointer-events-auto flex items-center space-x-2 bg-cyber-900/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-cyber-700/80 font-mono text-[11px] shadow-md">
+          <span class="text-slate-400">POS:</span>
+          <span class="text-cyber-cyan font-semibold">X: <span id="hudX">0.00</span>m</span>
+          <span class="text-cyber-cyan font-semibold">Y: <span id="hudY">0.00</span>m</span>
+          <span class="text-emerald-400 font-semibold">θ: <span id="hudTheta">0.0</span>°</span>
+          <span class="text-slate-500 border-l border-slate-700 pl-1.5 hidden sm:inline">Scale: <span
+              id="hudScale">100</span>px/m</span>
+        </div>
+
+        <!-- Floating Viewport Controls -->
+        <div
+          class="pointer-events-auto flex items-center space-x-1 bg-cyber-900/85 backdrop-blur-md p-1 rounded-lg border border-cyber-700/80 shadow-md">
+          <button id="btnZoomIn" title="Phóng to (+)"
+            class="w-7 h-7 rounded flex items-center justify-center bg-cyber-800 hover:bg-cyber-700 text-slate-200 border border-cyber-700 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </button>
+          <button id="btnZoomOut" title="Thu nhỏ (-)"
+            class="w-7 h-7 rounded flex items-center justify-center bg-cyber-800 hover:bg-cyber-700 text-slate-200 border border-cyber-700 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+            </svg>
+          </button>
+          <button id="btnResetView" title="Đưa khung nhìn về tâm (0,0)"
+            class="w-7 h-7 rounded flex items-center justify-center bg-cyber-800 hover:bg-cyber-700 text-slate-200 border border-cyber-700 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+              </path>
+            </svg>
+          </button>
+          <div class="h-3.5 w-[1px] bg-cyber-700 mx-0.5"></div>
+          <button id="btnToggleTrail" title="Bật/Tắt vệt quỹ đạo"
+            class="px-2 h-7 rounded flex items-center space-x-1 bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/40 hover:bg-cyber-cyan/30 text-[11px] font-mono transition">
+            <span>Vết:</span><b id="trailStatusText">ON</b>
+          </button>
+          <button id="btnClearTrail" title="Xóa toàn bộ vệt di chuyển"
+            class="px-1.5 h-7 rounded flex items-center bg-cyber-800 hover:bg-rose-950/60 text-rose-400 hover:text-rose-300 border border-cyber-700 text-[11px] font-mono transition">
+            Xóa vệt
+          </button>
+          <div class="h-3.5 w-[1px] bg-cyber-700 mx-0.5"></div>
+          <button id="btnResetPose" title="Đặt lại tư thế robot về gốc tọa độ (X=0, Y=0, θ=0)"
+            class="px-2 h-7 rounded flex items-center space-x-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 text-[11px] font-mono transition font-medium">
+            Reset Pose
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Interactive Canvas -->
+      <div id="canvasContainer"
+        class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden">
+        <canvas id="simCanvas" class="w-full h-full block"></canvas>
+      </div>
+
+      <!-- Canvas Bottom Info Bar -->
+      <div
+        class="bg-cyber-900 px-2.5 py-1 border-t border-cyber-700 flex items-center justify-between text-[10px] font-mono text-slate-400 z-10 shrink-0">
+        <div class="flex items-center space-x-2.5">
+          <span>💡 <b>Cuộn:</b> Zoom</span>
+          <span class="hidden sm:inline">|</span>
+          <span class="hidden sm:inline"><b>Kéo:</b> Di chuyển bản đồ</span>
+          <span class="hidden md:inline">|</span>
+          <span class="hidden md:inline">Tâm: <b class="text-amber-400">(0, 0)</b></span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <label class="flex items-center space-x-1 cursor-pointer">
+            <input type="checkbox" id="chkFollowRobot"
+              class="rounded bg-cyber-800 border-cyber-600 text-cyber-cyan focus:ring-0">
+            <span>Bám robot</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CỘT PHẢI: ĐIỀU KHIỂN & TELEMETRY (5/12 cột) ==================== -->
+    <div class="lg:col-span-5 xl:col-span-5 2xl:col-span-4 flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+
+      <!-- CARD 1: TELEMETRY DASHBOARD (THỜI GIAN THỰC) -->
+      <div class="bg-cyber-850 rounded-xl border border-cyber-700 p-2 shadow-md shrink-0 font-mono">
+        <div class="flex items-center justify-between mb-1.5 border-b border-cyber-700/80 pb-1">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyber-cyan shadow-neon-cyan"></span>
+            <h2 class="font-bold text-xs text-slate-100 uppercase tracking-wide">Realtime Telemetry</h2>
+          </div>
+          <span class="text-[10px] text-slate-400">60Hz</span>
+        </div>
+
+        <!-- Metric Cards: 6-in-1 Compact Grid -->
+        <div class="grid grid-cols-6 gap-1 text-center mb-1.5">
+          <div class="bg-cyber-800/80 p-1 rounded border border-cyber-700/60">
+            <div class="text-[9px] text-slate-400">X</div>
+            <div id="valX" class="text-xs font-bold text-cyber-cyan truncate">0.000</div>
+          </div>
+          <div class="bg-cyber-800/80 p-1 rounded border border-cyber-700/60">
+            <div class="text-[9px] text-slate-400">Y</div>
+            <div id="valY" class="text-xs font-bold text-cyber-cyan truncate">0.000</div>
+          </div>
+          <div class="bg-cyber-800/80 p-1 rounded border border-cyber-700/60">
+            <div class="text-[9px] text-slate-400">θ</div>
+            <div id="valTheta" class="text-xs font-bold text-emerald-400 truncate">0.0°</div>
+          </div>
+          <div class="bg-cyber-800/50 p-1 rounded border border-cyber-700/40">
+            <div class="text-[9px] text-slate-400">Vx</div>
+            <div id="valVx" class="text-xs font-semibold text-slate-200 truncate">0.00</div>
+          </div>
+          <div class="bg-cyber-800/50 p-1 rounded border border-cyber-700/40">
+            <div class="text-[9px] text-slate-400">Vy</div>
+            <div id="valVy" class="text-xs font-semibold text-slate-200 truncate">0.00</div>
+          </div>
+          <div class="bg-cyber-800/50 p-1 rounded border border-cyber-700/40">
+            <div class="text-[9px] text-slate-400">ω</div>
+            <div id="valOmega" class="text-xs font-semibold text-amber-300 truncate">0.0</div>
+          </div>
+        </div>
+
+        <!-- 3 Omni Wheels Speed & Power Bars -->
+        <div class="space-y-1 text-[11px]">
+          <!-- Wheel 1 (90 deg) -->
+          <div class="bg-cyber-800/60 px-2 py-0.5 rounded border border-cyber-700/50">
+            <div class="flex items-center justify-between leading-tight mb-0.5">
+              <span class="font-bold text-slate-200 flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyber-cyan"></span>
+                <span>B1 (90°)</span>
+              </span>
+              <div>
+                <span id="w1Rad" class="text-cyber-cyan font-bold">0.00 rad/s</span>
+                <span id="w1Rpm" class="text-slate-400 text-[10px] ml-1">(0 RPM)</span>
+              </div>
+            </div>
+            <div class="relative w-full h-1.5 bg-cyber-900 rounded-full overflow-hidden border border-cyber-700">
+              <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-500 z-10"></div>
+              <div id="w1BarLeft" class="absolute top-0 bottom-0 right-1/2 bg-amber-500 transition-all duration-75"
+                style="width: 0%;"></div>
+              <div id="w1BarRight" class="absolute top-0 bottom-0 left-1/2 bg-cyber-cyan transition-all duration-75"
+                style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Wheel 2 (210 deg) -->
+          <div class="bg-cyber-800/60 px-2 py-0.5 rounded border border-cyber-700/50">
+            <div class="flex items-center justify-between leading-tight mb-0.5">
+              <span class="font-bold text-slate-200 flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>B2 (210°)</span>
+              </span>
+              <div>
+                <span id="w2Rad" class="text-emerald-400 font-bold">0.00 rad/s</span>
+                <span id="w2Rpm" class="text-slate-400 text-[10px] ml-1">(0 RPM)</span>
+              </div>
+            </div>
+            <div class="relative w-full h-1.5 bg-cyber-900 rounded-full overflow-hidden border border-cyber-700">
+              <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-500 z-10"></div>
+              <div id="w2BarLeft" class="absolute top-0 bottom-0 right-1/2 bg-amber-500 transition-all duration-75"
+                style="width: 0%;"></div>
+              <div id="w2BarRight" class="absolute top-0 bottom-0 left-1/2 bg-emerald-400 transition-all duration-75"
+                style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Wheel 3 (330 deg) -->
+          <div class="bg-cyber-800/60 px-2 py-0.5 rounded border border-cyber-700/50">
+            <div class="flex items-center justify-between leading-tight mb-0.5">
+              <span class="font-bold text-slate-200 flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                <span>B3 (330°)</span>
+              </span>
+              <div>
+                <span id="w3Rad" class="text-indigo-400 font-bold">0.00 rad/s</span>
+                <span id="w3Rpm" class="text-slate-400 text-[10px] ml-1">(0 RPM)</span>
+              </div>
+            </div>
+            <div class="relative w-full h-1.5 bg-cyber-900 rounded-full overflow-hidden border border-cyber-700">
+              <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-500 z-10"></div>
+              <div id="w3BarLeft" class="absolute top-0 bottom-0 right-1/2 bg-amber-500 transition-all duration-75"
+                style="width: 0%;"></div>
+              <div id="w3BarRight" class="absolute top-0 bottom-0 left-1/2 bg-indigo-400 transition-all duration-75"
+                style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: VIRTUAL CONTROL PAD, TRAJECTORY MISSION & CONFIG -->
+      <div
+        class="bg-cyber-850 rounded-xl border border-cyber-700 p-2 shadow-md flex-1 min-h-0 flex flex-col overflow-hidden">
+        <!-- 3-Tab Selector: Manual, Mission, Config -->
+        <div
+          class="w-full flex rounded-lg bg-cyber-900/90 p-0.5 border border-cyber-700/70 mb-1.5 text-xs font-mono shrink-0">
+          <button id="tabManualBtn"
+            class="flex-1 py-1 px-1 rounded-md font-bold text-center transition bg-cyber-cyan text-cyber-900 shadow-neon-cyan cursor-pointer text-[11px]">
+            🎮 THỦ CÔNG
+          </button>
+          <button id="tabMissionBtn"
+            class="flex-1 py-1 px-1 rounded-md font-bold text-center transition text-slate-400 hover:text-slate-200 cursor-pointer text-[11px]">
+            🎯 QUỸ ĐẠO
+          </button>
+          <button id="tabConfigBtn"
+            class="flex-1 py-1 px-1 rounded-md font-bold text-center transition text-slate-400 hover:text-slate-200 cursor-pointer text-[11px]">
+            ⚙️ CẤU HÌNH
+          </button>
+        </div>
+
+        <!-- PANEL 1: MANUAL D-PAD -->
+        <div id="panelManual"
+          class="w-full flex-1 min-h-0 flex flex-col items-center justify-between overflow-y-auto py-0.5">
+          <!-- Omnidirectional 3x3 D-Pad Matrix -->
+          <div class="grid grid-cols-3 gap-1.5 w-full max-w-[220px] my-auto">
+            <!-- Row 1 -->
+            <button id="btnFwdLeft" data-cmd="fwd_left"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17L17 7M7 7h10M7 7v10">
+                </path>
+              </svg>
+              <span class="text-[8px] font-mono font-bold">↖ TIẾN-T</span>
+            </button>
+            <button id="btnForward" data-cmd="forward"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18">
+                </path>
+              </svg>
+              <span class="text-[9px] font-mono font-bold">▲ TIẾN</span>
+            </button>
+            <button id="btnFwdRight" data-cmd="fwd_right"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17L7 7M17 7H7M17 7v10"
+                  transform="scale(-1,1) translate(-24,0)"></path>
+              </svg>
+              <span class="text-[8px] font-mono font-bold">↗ TIẾN-P</span>
+            </button>
+
+            <!-- Row 2 -->
+            <button id="btnLeft" data-cmd="left"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+              </svg>
+              <span class="text-[9px] font-mono font-bold">◄ TRÁI</span>
+            </button>
+            <button id="btnStop" data-cmd="stop"
+              class="stop-btn aspect-square rounded-lg flex flex-col items-center justify-center text-white font-bold cursor-pointer">
+              <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="5" y="5" width="14" height="14" rx="2"></rect>
+              </svg>
+              <span class="text-[10px] font-mono tracking-wider font-extrabold">STOP</span>
+            </button>
+            <button id="btnRight" data-cmd="right"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3">
+                </path>
+              </svg>
+              <span class="text-[9px] font-mono font-bold">► PHẢI</span>
+            </button>
+
+            <!-- Row 3 -->
+            <button id="btnBackLeft" data-cmd="back_left"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 7l10 10M7 17h10M7 17V7"
+                  transform="rotate(180 12 12)"></path>
+              </svg>
+              <span class="text-[8px] font-mono font-bold">↙ LÙI-T</span>
+            </button>
+            <button id="btnBackward" data-cmd="backward"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3">
+                </path>
+              </svg>
+              <span class="text-[9px] font-mono font-bold">▼ LÙI</span>
+            </button>
+            <button id="btnBackRight" data-cmd="back_right"
+              class="dpad-btn aspect-square rounded-lg flex flex-col items-center justify-center text-slate-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 7L7 17M17 17H7M17 7V7"
+                  transform="rotate(180 12 12)"></path>
+              </svg>
+              <span class="text-[8px] font-mono font-bold">↘ LÙI-P</span>
+            </button>
+          </div>
+
+          <!-- Rotation Controls: CCW and CW -->
+          <div class="grid grid-cols-2 gap-1.5 w-full max-w-[220px] mt-1.5">
+            <button id="btnRotCCW" data-cmd="rot_ccw"
+              class="dpad-btn py-1.5 px-2 rounded-lg flex items-center justify-center space-x-1.5 text-slate-200">
+              <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M3 10h10a5 5 0 015 5v2M3 10l5-5M3 10l5 5"></path>
+              </svg>
+              <div class="text-left leading-tight font-mono">
+                <div class="text-[10px] font-bold">XOAY TRÁI</div>
+                <div class="text-[8px] text-slate-400">CCW [Q]</div>
+              </div>
+            </button>
+            <button id="btnRotCW" data-cmd="rot_cw"
+              class="dpad-btn py-1.5 px-2 rounded-lg flex items-center justify-center space-x-1.5 text-slate-200">
+              <div class="text-right leading-tight font-mono">
+                <div class="text-[10px] font-bold">XOAY PHẢI</div>
+                <div class="text-[8px] text-slate-400">CW [E]</div>
+              </div>
+              <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M21 10H11a5 5 0 00-5 5v2M21 10l-5-5M21 10l-5 5"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Keyboard Guide Visual Matrix -->
+          <div
+            class="w-full max-w-[220px] mt-1.5 pt-1 border-t border-cyber-700/60 flex items-center justify-between text-[10px] font-mono text-slate-400 shrink-0">
+            <span>Phím:</span>
+            <div class="flex items-center space-x-1">
+              <span id="keyW" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">W</span>
+              <span id="keyA" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">A</span>
+              <span id="keyS" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">S</span>
+              <span id="keyD" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">D</span>
+              <span class="text-slate-600">|</span>
+              <span id="keyQ" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">Q</span>
+              <span id="keyE" class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700">E</span>
+              <span class="text-slate-600">|</span>
+              <span id="keySpace"
+                class="key-badge px-1 py-0.2 rounded bg-cyber-800 border border-cyber-700 text-[9px]">SPACE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL 2: TRAJECTORY MISSION PLANNER -->
+        <div id="panelMission"
+          class="w-full flex-1 min-h-0 flex flex-col space-y-1.5 font-mono text-xs overflow-y-auto pr-0.5 hidden">
+          <!-- Mission Status & Progress Box -->
+          <div class="bg-cyber-900/90 p-2 rounded-lg border border-cyber-700 space-y-1 shrink-0">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400 font-semibold text-[10px]">TRẠNG THÁI:</span>
+              <span id="missionStatusBadge"
+                class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">SẴN
+                SÀNG (IDLE)</span>
+            </div>
+            <div class="flex justify-between items-center text-[10px]">
+              <span id="missionStepDetail" class="text-cyber-cyan font-bold truncate pr-2">Chưa bắt đầu</span>
+              <span id="missionStepCounter" class="text-slate-400 whitespace-nowrap">0 / 0</span>
+            </div>
+            <div class="relative w-full h-1.5 bg-cyber-800 rounded-full overflow-hidden border border-cyber-700/80">
+              <div id="missionStepProgressBar" class="h-full bg-cyber-cyan transition-all duration-75"
+                style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Mission Primary Control Buttons -->
+          <div class="grid grid-cols-3 gap-1.5 shrink-0">
+            <button id="btnMissionRun"
+              class="py-1.5 px-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold flex items-center justify-center space-x-1 shadow-neon-green transition cursor-pointer text-[11px]">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>CHẠY</span>
+            </button>
+            <button id="btnMissionPause"
+              class="py-1.5 px-1 rounded-lg bg-cyber-700 hover:bg-cyber-600 text-amber-300 font-bold flex items-center justify-center space-x-1 border border-amber-500/30 transition cursor-pointer text-[11px]">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+              <span>TẠM DỪNG</span>
+            </button>
+            <button id="btnMissionStop"
+              class="py-1.5 px-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold flex items-center justify-center space-x-1 shadow-neon-red transition cursor-pointer text-[11px]">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="5" y="5" width="14" height="14" rx="1"></rect>
+              </svg>
+              <span>HỦY</span>
+            </button>
+          </div>
+
+          <!-- Loop Mission Toggle & Clear -->
+          <div class="flex items-center justify-between px-1 py-0.5 shrink-0 text-[10px]">
+            <label class="flex items-center space-x-1 cursor-pointer text-slate-300">
+              <input type="checkbox" id="chkMissionLoop"
+                class="rounded bg-cyber-800 border-cyber-600 text-cyber-cyan focus:ring-0">
+              <span>🔁 Lặp chu kỳ (Loop)</span>
+            </label>
+            <button id="btnClearMissionSteps" class="text-[10px] text-rose-400 hover:underline cursor-pointer">Xóa hết
+              bước</button>
+          </div>
+
+          <!-- Step Delay & Smooth Profile Controls -->
+          <div class="bg-cyber-900/80 p-1.5 rounded-lg border border-cyber-700/70 space-y-1 text-[10px] shrink-0">
+            <div class="flex items-center justify-between">
+              <label for="inputStepDelay" class="flex items-center space-x-1 text-slate-300 cursor-pointer">
+                <span>⏱️ Nghỉ giữa các bước:</span>
+              </label>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="inputStepDelay" value="0.5" min="0" max="10" step="0.1"
+                  class="w-12 bg-cyber-800 border border-cyber-700 rounded px-1 py-0.5 text-slate-200 text-[10px] font-bold text-right focus:outline-none focus:border-cyber-cyan">
+                <span class="text-slate-500 font-mono text-[9px]">giây</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-0.5 border-t border-cyber-800">
+              <label class="flex items-center space-x-1 cursor-pointer text-slate-300"
+                title="Tăng giảm tốc S-Curve hình sin: v_start=0 và v_end=0 giúp dừng chính xác, triệt tiêu quán tính trượt">
+                <input type="checkbox" id="chkSmoothProfile" checked
+                  class="rounded bg-cyber-800 border-cyber-600 text-cyber-cyan focus:ring-0">
+                <span class="text-cyber-cyan font-semibold">✨ Chuyển động êm (v_s=0, v_e=0)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="space-y-0.5 pt-1 border-t border-cyber-700/60 shrink-0">
+            <div class="text-[9px] text-slate-400 uppercase font-bold">Mẫu Quỹ Đạo Nhanh:</div>
+            <div class="grid grid-cols-2 gap-1">
+              <button id="presetCustomExample"
+                class="py-1 px-1.5 rounded bg-cyber-800 hover:bg-cyber-700 border border-cyber-700 hover:border-cyber-cyan text-slate-300 text-left transition truncate text-[9px] cursor-pointer">
+                📍 Tiến 0.5m &amp; Trái 2m
+              </button>
+              <button id="presetSquare"
+                class="py-1 px-1.5 rounded bg-cyber-800 hover:bg-cyber-700 border border-cyber-700 hover:border-cyber-cyan text-slate-300 text-left transition truncate text-[9px] cursor-pointer">
+                ⬜ Hình vuông 1m
+              </button>
+              <button id="presetTriangle"
+                class="py-1 px-1.5 rounded bg-cyber-800 hover:bg-cyber-700 border border-cyber-700 hover:border-cyber-cyan text-slate-300 text-left transition truncate text-[9px] cursor-pointer">
+                📐 Tam giác đều 1m
+              </button>
+              <button id="presetZigzag"
+                class="py-1 px-1.5 rounded bg-cyber-800 hover:bg-cyber-700 border border-cyber-700 hover:border-cyber-cyan text-slate-300 text-left transition truncate text-[9px] cursor-pointer">
+                ⚡ Zíc-zắc 3 chặng
+              </button>
+            </div>
+          </div>
+
+          <!-- Mission Steps Sequence List -->
+          <div class="space-y-0.5 pt-1 border-t border-cyber-700/60 flex-1 min-h-[50px] flex flex-col">
+            <div class="flex items-center justify-between text-[9px] text-slate-400 uppercase font-bold shrink-0">
+              <span>Trình tự các bước:</span>
+              <span class="text-cyber-cyan" id="missionStepsCount">0 bước</span>
+            </div>
+            <div id="missionStepsList" class="space-y-1 flex-1 min-h-[50px] max-h-[100px] overflow-y-auto pr-1">
+              <!-- Steps rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Add Step Builder Form -->
+          <div class="bg-cyber-900/90 p-1.5 rounded-lg border border-cyber-700 space-y-1 shrink-0">
+            <div class="text-[9px] text-slate-300 uppercase font-bold flex items-center space-x-1">
+              <span class="text-cyber-cyan font-bold">+</span>
+              <span>Thêm Bước Vào Quỹ Đạo:</span>
+            </div>
+
+            <div class="grid grid-cols-12 gap-1 items-center">
+              <div class="col-span-6">
+                <select id="selStepAction"
+                  class="w-full bg-cyber-800 border border-cyber-700 rounded px-1.5 py-1 text-slate-200 text-[10px] focus:outline-none focus:border-cyber-cyan">
+                  <option value="forward">⬆ Tiến (+Y)</option>
+                  <option value="backward">⬇ Lùi (-Y)</option>
+                  <option value="left">⬅ Sang Trái (-X)</option>
+                  <option value="right">➡ Sang Phải (+X)</option>
+                  <option value="fwd_left">↖ Tiến - Trái</option>
+                  <option value="fwd_right">↗ Tiến - Phải</option>
+                  <option value="back_left">↙ Lùi - Trái</option>
+                  <option value="back_right">↘ Lùi - Phải</option>
+                  <option value="rot_ccw">⟲ Xoay Trái (CCW)</option>
+                  <option value="rot_cw">⟳ Xoay Phải (CW)</option>
+                  <option value="wait">⏸ Dừng Nghỉ (Wait)</option>
+                </select>
+              </div>
+
+              <div class="col-span-3 relative">
+                <input type="number" id="numStepVal" value="0.5" min="0.05" max="50" step="0.1"
+                  class="w-full bg-cyber-800 border border-cyber-700 rounded px-1.5 py-1 text-slate-200 text-[10px] font-bold focus:outline-none focus:border-cyber-cyan text-right pr-4">
+                <span id="unitStepLabel" class="absolute right-1 top-1 text-slate-500 text-[9px]">m</span>
+              </div>
+
+              <div class="col-span-3">
+                <button id="btnAddStep"
+                  class="w-full py-1 px-1 rounded bg-cyber-cyan hover:brightness-110 text-cyber-900 font-bold text-[10px] transition text-center cursor-pointer">
+                  + Thêm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL 3: SLIDERS CẤU HÌNH THÔNG SỐ VẬN TỐC & ROBOT -->
+        <div id="panelConfig"
+          class="w-full flex-1 min-h-0 flex flex-col space-y-2 font-mono text-xs overflow-y-auto pr-0.5 hidden">
+          <div class="flex items-center justify-between border-b border-cyber-700/80 pb-1 shrink-0">
+            <div class="flex items-center space-x-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyber-cyan shadow-neon-cyan"></span>
+              <span class="font-bold text-xs text-slate-100 uppercase tracking-wide">Cấu Hình Vận Tốc &amp; Robot</span>
+            </div>
+            <button id="btnResetConfig" class="text-[10px] text-cyber-cyan hover:underline cursor-pointer">Mặc
+              định</button>
+          </div>
+
+          <!-- Vmax Slider -->
+          <div class="space-y-0.5">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="text-slate-300">Vận tốc tịnh tiến tối đa (V_max):</span>
+              <span id="vMaxDisplay" class="font-bold text-cyber-cyan">1.00 m/s</span>
+            </div>
+            <input type="range" id="sliderVmax" min="0.1" max="3.0" step="0.05" value="1.0" class="w-full">
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>0.1 m/s (Rùa)</span>
+              <span>1.5 m/s</span>
+              <span>3.0 m/s (Nhanh)</span>
+            </div>
+          </div>
+
+          <!-- Omega Max Slider -->
+          <div class="space-y-0.5">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="text-slate-300">Vận tốc góc tối đa (ω_max):</span>
+              <span id="wMaxDisplay" class="font-bold text-amber-400">90 °/s</span>
+            </div>
+            <input type="range" id="sliderWmax" min="10" max="360" step="5" value="90" class="w-full">
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>10 °/s</span>
+              <span>180 °/s</span>
+              <span>360 °/s (1 vòng/s)</span>
+            </div>
+          </div>
+
+          <!-- Acceleration Smoothness Checkbox -->
+          <div class="pt-1 border-t border-cyber-700/60 flex items-center justify-between">
+            <div>
+              <div class="text-slate-300 font-semibold text-[11px]">Làm mịn gia tốc (Ramping)</div>
+              <div class="text-[9px] text-slate-400">Mô phỏng quán tính vật lý thực tế</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="chkAccelRamp" checked class="sr-only peer">
+              <div
+                class="w-8 h-4 bg-cyber-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyber-cyan">
+              </div>
+            </label>
+          </div>
+
+          <!-- Invert Rotation Toggle -->
+          <div class="pt-1 border-t border-cyber-700/60 flex items-center justify-between">
+            <div>
+              <div class="text-slate-300 font-semibold text-[11px]">🔄 Đảo chiều xoay (Invert Yaw)</div>
+              <div class="text-[9px] text-slate-400">Đảo chiều xoay trái ↔ phải phần cứng</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="chkInvertRotation" class="sr-only peer">
+              <div
+                class="w-8 h-4 bg-cyber-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyber-cyan">
+              </div>
+            </label>
+          </div>
+
+          <!-- Robot Kinematic Dimensions (L & r) -->
+          <div class="pt-1 border-t border-cyber-700/60 space-y-1.5">
+            <div class="text-slate-300 font-semibold text-[10px] flex justify-between items-center">
+              <span>KÍCH THƯỚC ĐỘNG HỌC (L &amp; r)</span>
+              <span class="text-[9px] text-slate-500 font-normal">Tự động cập nhật mô phỏng</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+              <!-- Bán kính thân L -->
+              <div class="bg-cyber-800/70 p-1.5 rounded-lg border border-cyber-700/60">
+                <div class="flex justify-between text-slate-400 mb-0.5">
+                  <span>Bán kính xe (L):</span>
+                  <span id="valLDisplay" class="font-bold text-cyber-cyan">0.375 m</span>
+                </div>
+                <div class="flex items-center space-x-1">
+                  <input type="number" id="inputL" min="0.05" max="1.50" step="0.005" value="0.375"
+                    class="w-full bg-cyber-900 border border-cyber-700 rounded px-1.5 py-0.5 text-slate-200 text-[11px] font-mono focus:outline-none focus:border-cyber-cyan">
+                  <span class="text-slate-500 text-[9px]">m</span>
+                </div>
+              </div>
+
+              <!-- Bán kính bánh xe r -->
+              <div class="bg-cyber-800/70 p-1.5 rounded-lg border border-cyber-700/60">
+                <div class="flex justify-between text-slate-400 mb-0.5">
+                  <span>Bán kính bánh (r):</span>
+                  <span id="valRDisplay" class="font-bold text-cyber-cyan">0.050 m</span>
+                </div>
+                <div class="flex items-center space-x-1">
+                  <input type="number" id="inputR" min="0.005" max="0.50" step="0.005" value="0.05"
+                    class="w-full bg-cyber-900 border border-cyber-700 rounded px-1.5 py-0.5 text-slate-200 text-[11px] font-mono focus:outline-none focus:border-cyber-cyan">
+                  <span class="text-slate-500 text-[9px]">m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==================== MODAL WEBSOCKET BRIDGE (ESP32 / ROS2 / ARDUINO) ==================== -->
+  <div id="wsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm hidden p-4">
+    <div
+      class="bg-cyber-850 border border-cyber-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl font-mono text-xs text-slate-300">
+
+      <div class="flex items-center justify-between border-b border-cyber-700 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-cyber-cyan shadow-neon-cyan"></span>
+          <h3 class="font-bold text-base text-slate-100 uppercase tracking-wide">Cấu hình Hardware WebSocket Bridge</h3>
+        </div>
+        <button id="btnCloseWsModal"
+          class="w-7 h-7 rounded-lg bg-cyber-800 hover:bg-cyber-700 text-slate-400 hover:text-slate-200 flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="space-y-4">
+        <p class="text-slate-400 leading-relaxed">
+          Kết nối trực tiếp tới vi điều khiển <b>ESP32-S3 / Arduino / ROS2</b> qua giao thức WebSocket không trễ. Khi
+          kết nối thành công, mọi lệnh phím và slider sẽ được truyền song song tới robot thật.
+        </p>
+
+        <!-- WebSocket URL Input -->
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">Địa chỉ WebSocket Server (ESP32):</label>
+          <div class="flex space-x-2">
+            <input type="text" id="wsUrlInput" value="ws://192.168.4.1:81"
+              class="flex-1 bg-cyber-900 border border-cyber-700 rounded-lg px-3 py-2 text-cyber-cyan focus:outline-none focus:border-cyber-cyan">
+            <button id="btnWsConnectToggle"
+              class="px-4 py-2 rounded-lg bg-cyber-cyan text-cyber-900 font-bold hover:brightness-110 transition">
+              Kết Nối
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-500 mt-1 block">Mặc định Access Point ESP32: SSID <code
+              class="text-cyber-cyan">ESP32-OMNI-ROBOT</code> (Port 81)</span>
+        </div>
+
+        <!-- Communication Protocol Specs -->
+        <div class="bg-cyber-900/80 p-3 rounded-xl border border-cyber-700/80 space-y-2">
+          <div class="font-bold text-slate-200 text-[11px] text-cyber-cyan">Định dạng gói tin gửi đi (Client -> Robot):
+          </div>
+          <div class="bg-cyber-800 p-2 rounded border border-cyber-700 text-slate-300 font-mono text-[11px]">
+            <code>M:vx,vy,w</code> &nbsp; <span class="text-slate-400">Ví dụ: <code
+                class="text-emerald-400">M:0.85,0.00,-0.40</code></span>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-normal">
+            Chu kỳ gửi: <b>35ms (~28 FPS)</b>, tự động kiểm tra chống nghẽn hàng đợi (queue buffer-aware). Lệnh dừng
+            phanh khẩn cấp gửi cưỡng bức liên tiếp 3 lần.
+          </p>
+        </div>
+
+        <!-- Wheel Radius Selection Setting (0.0375m vs 0.375m) -->
+        <div class="bg-cyber-800/60 p-3 rounded-xl border border-cyber-700/60">
+          <div class="font-bold text-slate-200 mb-1">Cấu hình bán kính bánh xe $r$:</div>
+          <div class="flex items-center space-x-4">
+            <label class="flex items-center space-x-1.5 cursor-pointer">
+              <input type="radio" name="optWheelRadius" value="0.0375" checked class="text-cyber-cyan focus:ring-0">
+              <span>0.0375 m (37.5mm - Bánh Omni tiêu chuẩn)</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer">
+              <input type="radio" name="optWheelRadius" value="0.375" class="text-cyber-cyan focus:ring-0">
+              <span>0.375 m</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button id="btnSaveWsModal"
+            class="px-5 py-2 rounded-lg bg-cyber-700 hover:bg-cyber-600 text-slate-100 font-semibold transition">
+            Đóng &amp; Áp Dụng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT KINEMATICS & SIMULATION ENGINE ==================== -->
+  <script>
+    /**
+     * ==============================================================================
+     * OMNI-3 ROBOT KINEMATICS & 2D SIMULATION ENGINE (VANILLA JAVASCRIPT)
+     * ==============================================================================
+     * Tác giả: AI Robotics Assistant
+     * Mô hình: 3-Wheel Omnidirectional Mobile Robot
+     * 
+     * Hệ quy chiếu thân robot:
+     * - X_b: Trục sang phải (Right)
+     * - Y_b: Trục hướng về phía trước (Forward / Heading)
+     * 
+     * Bố trí 3 bánh Omni cách nhau 120°:
+     * - Bánh 1: alpha_1 = 90°  = pi/2 rad   (Nằm trên trục +Y_b, lăn ngang)
+     * - Bánh 2: alpha_2 = 210° = 7*pi/6 rad (Nằm góc sau bên trái)
+     * - Bánh 3: alpha_3 = 330° = 11*pi/6 rad(Nằm góc sau bên phải)
+     * 
+     * Công thức động học nghịch:
+     *   omega_i = (1/r) * (-v_x * sin(alpha_i) + v_y * cos(alpha_i) + L * omega)
+     * ==============================================================================
+     */
+
+    // --- 1. THAM SỐ VẬT LÝ ROBOT ---
+    const ROBOT_CONFIG = {
+      L: 0.375,              // Bán kính khung robot tới tâm các bánh xe (m)
+      r: 0.05,            // Bán kính bánh xe (m) - Mặc định 37.5mm (đường kính 75mm)
+      vMax: 1.0,            // Vận tốc tịnh tiến tối đa (m/s)
+      wMax: 90 * (Math.PI / 180), // Vận tốc góc tối đa (rad/s), tương đương 90°/s
+      accelRamp: true,      // Bật/tắt làm mịn gia tốc
+      accelRate: 0.05,      // Tỉ lệ tăng tốc mỗi chu kỳ
+      decelRate: 0.07,      // Tỉ lệ hãm phanh mỗi chu kỳ
+      invertRotation: false,// Cho phép đảo chiều xoay nếu cần
+      wheelAngles: [
+        Math.PI / 2,        // Wheel 1: 90°
+        (7 * Math.PI) / 6,  // Wheel 2: 210°
+        (11 * Math.PI) / 6  // Wheel 3: 330°
+      ]
+    };
+
+    // --- 2. TRẠNG THÁI HIỆN TẠI CỦA ROBOT (STATE) ---
+    const robotState = {
+      // Tọa độ toàn cục (Global Pose)
+      x: 0.0,               // Mét (trục X toàn cục)
+      y: 0.0,               // Mét (trục Y toàn cục)
+      theta: 0.0,           // Radian (Góc hướng, 0 rad hướng theo trục +Y)
+
+      // Vận tốc thực tế (Body frame)
+      vx: 0.0,              // m/s
+      vy: 0.0,              // m/s
+      omega: 0.0,           // rad/s
+
+      // Vận tốc mục tiêu từ người dùng (Target Body velocities)
+      targetVx: 0.0,
+      targetVy: 0.0,
+      targetOmega: 0.0,
+
+      // Vận tốc góc và góc quay tức thời của từng bánh xe (để vẽ animation xoay)
+      wheelSpeeds: [0.0, 0.0, 0.0],     // rad/s
+      wheelRpm: [0.0, 0.0, 0.0],        // RPM
+      wheelAnglesRot: [0.0, 0.0, 0.0]   // radian (tích lũy góc quay để vẽ con lăn xoay)
+    };
+
+    // --- 3. ĐƯỜNG VẾT QUỸ ĐẠO (TRAJECTORY TRAIL) ---
+    const trajectory = {
+      enabled: true,
+      points: [],
+      maxPoints: 4000,
+      minDistRecord: 0.015  // Chỉ ghi nhận điểm mới nếu robot di chuyển tối thiểu 1.5cm
+    };
+
+    // --- 4. TRẠNG THÁI KHUNG NHÌN CANVAS (CAMERA & VIEWPORT) ---
+    const viewport = {
+      scale: 120,           // 1 mét = 120 pixels
+      minScale: 35,
+      maxScale: 350,
+      offsetX: 0,           // Pan offset X (pixels)
+      offsetY: 0,           // Pan offset Y (pixels)
+      followRobot: false,   // Tự động căn giữa theo robot
+      isDragging: false,
+      lastMouseX: 0,
+      lastMouseY: 0
+    };
+
+    // --- 5. QUẢN LÝ BÀN PHÍM VÀ LỆNH ĐIỀU KHIỂN ---
+    const pressedKeys = new Set();
+    let currentVirtualCmd = null;
+
+    // --- 6. TRẠNG THÁI ENABLE MOTOR DRIVER (ENA) ---
+    let isEnaEnabled = true;
+
+    // --- 7. WEBSOCKET HARDWARE BRIDGE CHO ESP32 / ARDUINO / ROS2 ---
+    const wsBridge = {
+      ws: null,
+      url: 'ws://192.168.4.1:81',
+      connected: false,
+      sendTimer: null,
+      sendIntervalMs: 45 // 45ms ~ 22 FPS tối ưu cho sóng WiFi ESP32
+    };
+
+    // ==============================================================================
+    // CANVAS INITIALIZATION & SETUP
+    // ==============================================================================
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      // Reset transform and scale for Retina / High-DPI screens
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      // Nếu lần đầu khởi động, đặt tâm tọa độ (0,0) vào chính giữa canvas
+      if (viewport.offsetX === 0 && viewport.offsetY === 0) {
+        viewport.offsetX = rect.width / 2;
+        viewport.offsetY = rect.height / 2;
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // ==============================================================================
+    // ĐỘNG HỌC NGHỊCH & TÍCH PHÂN TỌA ĐỘ (KINEMATICS ENGINE)
+    // ==============================================================================
+
+    /**
+     * Hàm làm mịn giá trị vận tốc theo quán tính gia tốc / hãm phanh
+     */
+    function rampValue(current, target, accel, decel) {
+      if (Math.abs(target) > Math.abs(current)) {
+        // Đang tăng tốc
+        const step = (target > current ? 1 : -1) * accel;
+        current += step;
+        if ((step > 0 && current > target) || (step < 0 && current < target)) {
+          current = target;
+        }
+      } else {
+        // Đang giảm tốc / phanh
+        const step = (target > current ? 1 : -1) * decel;
+        current += step;
+        if ((step > 0 && current > target) || (step < 0 && current < target)) {
+          current = target;
+        }
+      }
+      if (target === 0.0 && Math.abs(current) < 0.01) {
+        current = 0.0;
+      }
+      return current;
+    }
+
+    /**
+     * Tính toán Động học nghịch (Inverse Kinematics) cho 3 bánh Omni
+     * Formula: omega_i = (1/r) * (-v_x * sin(alpha_i) + v_y * cos(alpha_i) + L * omega)
+     */
+    function computeInverseKinematics(vx, vy, omega) {
+      const { L, r, wheelAngles } = ROBOT_CONFIG;
+      const speeds = [0, 0, 0];
+
+      for (let i = 0; i < 3; i++) {
+        const alpha = wheelAngles[i];
+        // Tính vận tốc tiếp tuyến (tangential velocity) của điểm tiếp xúc bánh xe
+        const v_tangent = -vx * Math.sin(alpha) + vy * Math.cos(alpha) + L * omega;
+        // Vận tốc góc bánh xe omega_i (rad/s)
+        speeds[i] = v_tangent / r;
+      }
+      return speeds;
+    }
+
+    /**
+     * Cập nhật trạng thái chuyển động của robot theo chu kỳ dt (giây)
+     */
+    function updatePhysics(dt) {
+      // 0. Cập nhật tiến trình chạy quỹ đạo tự động (Mission Planner)
+      if (typeof missionState !== 'undefined' && missionState.isRunning && !missionState.isPaused) {
+        updateMissionExecution(dt);
+      }
+
+      // 1. Cập nhật vận tốc thân (kiểm tra khóa trục ENA)
+      if (!isEnaEnabled) {
+        robotState.vx = 0;
+        robotState.vy = 0;
+        robotState.omega = 0;
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = 0;
+      } else if (ROBOT_CONFIG.accelRamp) {
+        robotState.vx = rampValue(robotState.vx, robotState.targetVx, ROBOT_CONFIG.accelRate, ROBOT_CONFIG.decelRate);
+        robotState.vy = rampValue(robotState.vy, robotState.targetVy, ROBOT_CONFIG.accelRate, ROBOT_CONFIG.decelRate);
+        robotState.omega = rampValue(robotState.omega, robotState.targetOmega, ROBOT_CONFIG.accelRate * 1.5, ROBOT_CONFIG.decelRate * 1.5);
+      } else {
+        robotState.vx = robotState.targetVx;
+        robotState.vy = robotState.targetVy;
+        robotState.omega = robotState.targetOmega;
+      }
+
+      // 2. Tính tốc độ góc 3 bánh theo công thức Động học nghịch
+      const speeds = computeInverseKinematics(robotState.vx, robotState.vy, robotState.omega);
+      for (let i = 0; i < 3; i++) {
+        robotState.wheelSpeeds[i] = speeds[i];
+        // RPM = rad/s * 60 / (2 * pi)
+        robotState.wheelRpm[i] = (speeds[i] * 60) / (2 * Math.PI);
+        // Tích lũy góc quay con lăn để hiển thị animation trên canvas
+        robotState.wheelAnglesRot[i] += speeds[i] * dt;
+      }
+
+      // 3. Tích phân Euler cập nhật tư thế toàn cục (Global Odometry)
+      // dX = (v_x * cos(θ) - v_y * sin(θ)) * dt
+      // dY = (v_x * sin(θ) + v_y * cos(θ)) * dt
+      // dθ = ω * dt
+      const theta = robotState.theta;
+      const dx = (robotState.vx * Math.cos(theta) - robotState.vy * Math.sin(theta)) * dt;
+      const dy = (robotState.vx * Math.sin(theta) + robotState.vy * Math.cos(theta)) * dt;
+      const dtheta = robotState.omega * dt;
+
+      robotState.x += dx;
+      robotState.y += dy;
+      robotState.theta += dtheta;
+
+      // Chuẩn hóa góc theta về đoạn [-pi, pi]
+      while (robotState.theta > Math.PI) robotState.theta -= 2 * Math.PI;
+      while (robotState.theta < -Math.PI) robotState.theta += 2 * Math.PI;
+
+      // 4. Ghi nhận vết quỹ đạo (Trajectory Trail)
+      if (trajectory.enabled) {
+        const lastPt = trajectory.points[trajectory.points.length - 1];
+        if (!lastPt || Math.hypot(robotState.x - lastPt.x, robotState.y - lastPt.y) >= trajectory.minDistRecord) {
+          trajectory.points.push({ x: robotState.x, y: robotState.y });
+          if (trajectory.points.length > trajectory.maxPoints) {
+            trajectory.points.shift();
+          }
+        }
+      }
+
+      // 5. Chế độ Camera bám theo robot
+      if (viewport.followRobot) {
+        const rect = canvasContainer.getBoundingClientRect();
+        viewport.offsetX = (rect.width / 2) - (robotState.x * viewport.scale);
+        viewport.offsetY = (rect.height / 2) + (robotState.y * viewport.scale);
+      }
+    }
+
+    // ==============================================================================
+    // CANVAS RENDERING (LƯỚI TỌA ĐỘ, TRAIL & ROBOT 3 BÁNH OMNI)
+    // ==============================================================================
+
+    /**
+     * Chuyển đổi tọa độ hệ Mét (Robot space) sang Tọa độ Màn hình Canvas (Pixel space)
+     */
+    function worldToCanvas(wx, wy) {
+      // Trong thế giới thực: +X sang phải, +Y hướng lên trên.
+      // Trên canvas: +X sang phải, +Y hướng xuống dưới.
+      return {
+        x: viewport.offsetX + (wx * viewport.scale),
+        y: viewport.offsetY - (wy * viewport.scale)
+      };
+    }
+
+    /**
+     * Chuyển đổi tọa độ Màn hình Canvas sang Tọa độ Mét thế giới thực
+     */
+    function canvasToWorld(cx, cy) {
+      return {
+        x: (cx - viewport.offsetX) / viewport.scale,
+        y: (viewport.offsetY - cy) / viewport.scale
+      };
+    }
+
+    /**
+     * Vẽ lưới tọa độ Grid và vạch số Mét
+     */
+    function drawGrid(w, h) {
+      const { scale, offsetX, offsetY } = viewport;
+
+      // Tìm phạm vi mét đang hiển thị trên màn hình
+      const topLeft = canvasToWorld(0, 0);
+      const bottomRight = canvasToWorld(w, h);
+
+      const minX = Math.floor(topLeft.x) - 1;
+      const maxX = Math.ceil(bottomRight.x) + 1;
+      const minY = Math.floor(bottomRight.y) - 1;
+      const maxY = Math.ceil(topLeft.y) + 1;
+
+      // 1. Vẽ lưới phụ nhỏ (Minor Grid: mỗi 0.2m) nếu phóng to đủ lớn
+      if (scale > 70) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#121727';
+        ctx.lineWidth = 1;
+        const subStep = 0.2;
+        for (let x = Math.floor(topLeft.x / subStep) * subStep; x <= maxX; x += subStep) {
+          const pt = worldToCanvas(x, 0);
+          ctx.moveTo(pt.x, 0);
+          ctx.lineTo(pt.x, h);
+        }
+        for (let y = Math.floor(bottomRight.y / subStep) * subStep; y <= maxY; y += subStep) {
+          const pt = worldToCanvas(0, y);
+          ctx.moveTo(0, pt.y);
+          ctx.lineTo(w, pt.y);
+        }
+        ctx.stroke();
+      }
+
+      // 2. Vẽ lưới chính (Major Grid: mỗi 1.0m)
+      ctx.beginPath();
+      ctx.strokeStyle = '#1e263d';
+      ctx.lineWidth = 1.2;
+      for (let x = minX; x <= maxX; x += 1) {
+        const pt = worldToCanvas(x, 0);
+        ctx.moveTo(pt.x, 0);
+        ctx.lineTo(pt.x, h);
+      }
+      for (let y = minY; y <= maxY; y += 1) {
+        const pt = worldToCanvas(0, y);
+        ctx.moveTo(0, pt.y);
+        ctx.lineTo(w, pt.y);
+      }
+      ctx.stroke();
+
+      // 3. Vẽ 2 trục chính X (Đỏ/Cyan) và Y (Xanh lục) đi qua gốc (0,0)
+      const origin = worldToCanvas(0, 0);
+
+      // Trục X (y = 0)
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.moveTo(0, origin.y);
+      ctx.lineTo(w, origin.y);
+      ctx.stroke();
+
+      // Trục Y (x = 0)
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.moveTo(origin.x, 0);
+      ctx.lineTo(origin.x, h);
+      ctx.stroke();
+
+      // 4. Nhãn số mét trên các trục tọa độ
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let x = minX; x <= maxX; x += 1) {
+        if (x === 0) continue;
+        const pt = worldToCanvas(x, 0);
+        if (pt.x >= 0 && pt.x <= w) {
+          ctx.fillText(`${x}m`, pt.x, Math.min(Math.max(origin.y + 4, 10), h - 25));
+        }
+      }
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      for (let y = minY; y <= maxY; y += 1) {
+        if (y === 0) continue;
+        const pt = worldToCanvas(0, y);
+        if (pt.y >= 0 && pt.y <= h) {
+          ctx.fillText(`${y}m`, Math.min(Math.max(origin.x + 6, 10), w - 35), pt.y);
+        }
+      }
+
+      // Điểm gốc tọa độ (0,0)
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fill();
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.fillText('(0,0)', origin.x + 8, origin.y - 8);
+    }
+
+    /**
+     * Vẽ đường vết chuyển động Trajectory Trail
+     */
+    function drawTrail() {
+      if (!trajectory.enabled || trajectory.points.length < 2) return;
+
+      ctx.save();
+      ctx.beginPath();
+      const first = worldToCanvas(trajectory.points[0].x, trajectory.points[0].y);
+      ctx.moveTo(first.x, first.y);
+
+      for (let i = 1; i < trajectory.points.length; i++) {
+        const pt = worldToCanvas(trajectory.points[i].x, trajectory.points[i].y);
+        ctx.lineTo(pt.x, pt.y);
+      }
+
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /**
+     * Vẽ bánh xe Omni tại vị trí cục bộ và góc quay sinh động
+     */
+    function drawOmniWheel(alpha, wheelIdx, wheelSpeed, rotAngle) {
+      const { L, scale } = { L: ROBOT_CONFIG.L, scale: viewport.scale };
+
+      // Vị trí tâm bánh xe trong hệ thân robot
+      // x_w = L * cos(alpha), y_w = L * sin(alpha)
+      const xw = L * Math.cos(alpha) * scale;
+      const yw = -L * Math.sin(alpha) * scale; // đảo dấu trục Y màn hình
+
+      ctx.save();
+      ctx.translate(xw, yw);
+
+      // Góc xoay của bánh xe: bánh xe lăn vuông góc với bán kính (tiếp tuyến)
+      // Góc tiếp tuyến của bán kính alpha: alpha + pi/2
+      // Trên canvas góc âm: -(alpha + Math.PI / 2)
+      ctx.rotate(-(alpha + Math.PI / 2));
+
+      // Kích thước vẽ bánh xe
+      const wheelLength = Math.max(0.09 * scale, 18);  // Chiều dài bánh
+      const wheelWidth = Math.max(0.035 * scale, 8);    // Độ dày bánh
+
+      // 1. Thân bánh xe chính (Hub)
+      ctx.fillStyle = '#161b2c';
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 1.8;
+
+      // Bo góc hình chữ nhật thân bánh xe
+      ctx.beginPath();
+      ctx.roundRect(-wheelLength / 2, -wheelWidth / 2, wheelLength, wheelWidth, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // 2. Vẽ các con lăn (Omni Rollers) chuyển động lăn xoay
+      const numRollers = 4;
+      const spacing = wheelLength / numRollers;
+      // Dịch chuyển animation theo rotAngle
+      const offset = ((rotAngle * 6) % spacing);
+
+      ctx.fillStyle = Math.abs(wheelSpeed) > 0.05 ? '#00f0ff' : '#475569';
+      for (let j = -numRollers; j <= numRollers; j++) {
+        const rx = j * spacing + offset;
+        if (rx >= -wheelLength / 2 + 3 && rx <= wheelLength / 2 - 3) {
+          ctx.fillRect(rx - 1.5, -wheelWidth / 2 + 1, 3, wheelWidth - 2);
+        }
+      }
+
+      // 3. Nhãn tên bánh xe (W1, W2, W3)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`W${wheelIdx + 1}`, 0, -wheelWidth / 2 - 8);
+
+      ctx.restore();
+    }
+
+    /**
+     * Vẽ Robot 3 Bánh Omni hoàn chỉnh tại (X, Y, theta)
+     */
+    function drawRobot() {
+      const { scale } = viewport;
+      const { L } = ROBOT_CONFIG;
+      const pos = worldToCanvas(robotState.x, robotState.y);
+
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      // Xoay canvas theo góc hướng theta của robot.
+      // Vì hệ trục chuẩn: theta = 0 hướng theo trục +Y (thẳng đứng lên).
+      // Khi theta tăng CCW, trên màn hình Canvas góc quay là -theta.
+      ctx.rotate(-robotState.theta);
+
+      const radiusPx = L * scale;
+
+      // 1. Vòng hào quang phát sáng (Glow aura)
+      ctx.beginPath();
+      ctx.arc(0, 0, radiusPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(12, 16, 26, 0.9)';
+      ctx.fill();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(0, 240, 255, 0.6)';
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0; // Tắt blur
+
+      // 2. Vòng tròn trang trí công nghệ & nan hoa kết nối tới 3 bánh xe
+      ctx.beginPath();
+      ctx.arc(0, 0, radiusPx * 0.45, 0, Math.PI * 2);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Vẽ 3 nan hoa từ tâm nối tới 3 bánh xe
+      for (let i = 0; i < 3; i++) {
+        const alpha = ROBOT_CONFIG.wheelAngles[i];
+        const xw = L * Math.cos(alpha) * scale;
+        const yw = -L * Math.sin(alpha) * scale;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(xw, yw);
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // 3. Mũi tên chỉ hướng đầu robot (Heading Arrow hướng lên +Y)
+      ctx.beginPath();
+      ctx.moveTo(0, 4);
+      ctx.lineTo(0, -radiusPx * 0.85); // Hướng mũi tên lên phía trước
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Đầu mũi tên nhọn
+      ctx.beginPath();
+      ctx.moveTo(0, -radiusPx * 0.95);
+      ctx.lineTo(-7, -radiusPx * 0.72);
+      ctx.lineTo(7, -radiusPx * 0.72);
+      ctx.closePath();
+      ctx.fillStyle = '#10b981';
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // 4. Vẽ 3 bánh xe Omni với hiệu ứng quay con lăn
+      for (let i = 0; i < 3; i++) {
+        drawOmniWheel(
+          ROBOT_CONFIG.wheelAngles[i],
+          i,
+          robotState.wheelSpeeds[i],
+          robotState.wheelAnglesRot[i]
+        );
+      }
+
+      // 5. Điểm trọng tâm robot (Center Core)
+      ctx.beginPath();
+      ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#00f0ff';
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ==============================================================================
+    // MAIN SIMULATION LOOP (60 FPS REQUEST ANIMATION FRAME)
+    // ==============================================================================
+    let lastTimestamp = performance.now();
+    let frameCount = 0;
+    let fpsTimer = performance.now();
+    let currentFps = 60;
+
+    function simLoop(timestamp) {
+      // Tính bước thời gian dt (giới hạn tối đa 0.05s để tránh nhảy vọt khi ẩn tab)
+      let dt = (timestamp - lastTimestamp) / 1000.0;
+      if (dt > 0.05) dt = 0.05;
+      lastTimestamp = timestamp;
+
+      // Đếm FPS
+      frameCount++;
+      if (timestamp - fpsTimer >= 1000) {
+        currentFps = frameCount;
+        frameCount = 0;
+        fpsTimer = timestamp;
+        document.getElementById('simStatusText').innerText = `SIM: ${currentFps} FPS`;
+      }
+
+      // 1. Cập nhật vật lý & động học
+      updatePhysics(dt);
+
+      // 2. Xóa và vẽ lại Canvas
+      const rect = canvasContainer.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      drawGrid(rect.width, rect.height);
+      drawTrail();
+      drawRobot();
+
+      // 3. Cập nhật giao diện Telemetry Dashboard
+      updateDashboardUI();
+
+      // Tiếp tục vòng lặp 60 FPS
+      requestAnimationFrame(simLoop);
+    }
+
+    // ==============================================================================
+    // CẬP NHẬT GIAO DIỆN TELEMETRY DASHBOARD THỜI GIAN THỰC
+    // ==============================================================================
+    function updateDashboardUI() {
+      // 1. Tọa độ toàn cục & góc hướng
+      const xStr = robotState.x.toFixed(3);
+      const yStr = robotState.y.toFixed(3);
+      const thetaDeg = (robotState.theta * (180 / Math.PI)).toFixed(1);
+
+      document.getElementById('valX').innerHTML = `${xStr} <span class="text-[10px] text-slate-400">m</span>`;
+      document.getElementById('valY').innerHTML = `${yStr} <span class="text-[10px] text-slate-400">m</span>`;
+      document.getElementById('valTheta').innerHTML = `${thetaDeg} <span class="text-[10px] text-slate-400">°</span>`;
+
+      // Floating HUD trên Canvas
+      document.getElementById('hudX').innerText = robotState.x.toFixed(2);
+      document.getElementById('hudY').innerText = robotState.y.toFixed(2);
+      document.getElementById('hudTheta').innerText = thetaDeg;
+      document.getElementById('hudScale').innerText = Math.round(viewport.scale);
+
+      // 2. Vận tốc thân robot
+      document.getElementById('valVx').innerHTML = `${robotState.vx.toFixed(2)} <span class="text-[9px] text-slate-500">m/s</span>`;
+      document.getElementById('valVy').innerHTML = `${robotState.vy.toFixed(2)} <span class="text-[9px] text-slate-500">m/s</span>`;
+      const omegaDeg = (robotState.omega * (180 / Math.PI)).toFixed(1);
+      document.getElementById('valOmega').innerHTML = `${omegaDeg} <span class="text-[9px] text-slate-500">°/s</span>`;
+
+      // 3. Tốc độ 3 bánh xe (rad/s & RPM) + Thanh đo 2 chiều
+      // Giới hạn RPM tham chiếu để tính tỷ lệ thanh đo phần trăm (tối đa ~180 RPM)
+      const maxRefRpm = Math.max((ROBOT_CONFIG.vMax / ROBOT_CONFIG.r) * (60 / (2 * Math.PI)) * 1.3, 100);
+
+      const wIds = [
+        { rad: 'w1Rad', rpm: 'w1Rpm', barL: 'w1BarLeft', barR: 'w1BarRight' },
+        { rad: 'w2Rad', rpm: 'w2Rpm', barL: 'w2BarLeft', barR: 'w2BarRight' },
+        { rad: 'w3Rad', rpm: 'w3Rpm', barL: 'w3BarLeft', barR: 'w3BarRight' }
+      ];
+
+      for (let i = 0; i < 3; i++) {
+        const rad = robotState.wheelSpeeds[i];
+        const rpm = robotState.wheelRpm[i];
+        const ids = wIds[i];
+
+        const sign = rad >= 0 ? '+' : '';
+        document.getElementById(ids.rad).innerText = `${sign}${rad.toFixed(2)} rad/s`;
+        document.getElementById(ids.rpm).innerText = `(${sign}${Math.round(rpm)} RPM)`;
+
+        // Tính phần trăm công suất (-100% đến +100%)
+        const pct = Math.min(Math.abs(rpm) / maxRefRpm, 1.0) * 50; // max 50% mỗi nửa bên
+        const barL = document.getElementById(ids.barL);
+        const barR = document.getElementById(ids.barR);
+
+        if (rpm > 0.5) {
+          barL.style.width = '0%';
+          barR.style.width = `${pct}%`;
+        } else if (rpm < -0.5) {
+          barR.style.width = '0%';
+          barL.style.width = `${pct}%`;
+        } else {
+          barL.style.width = '0%';
+          barR.style.width = '0%';
+        }
+      }
+    }
+
+    // ==============================================================================
+    // BỘ PHÍM ĐIỀU KHIỂN: BÀN PHÍM CỨNG (W/A/S/D/Q/E/SPACE) & D-PAD ẢO
+    // ==============================================================================
+
+    /**
+     * Tính toán vector vận tốc thân (targetVx, targetVy, targetOmega) từ phím bấm
+     */
+    function evaluateTargetVelocity() {
+      // Nếu ENA tắt (thả tự do trục động cơ), vô hiệu hóa mọi lệnh di chuyển
+      if (!isEnaEnabled) {
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = 0;
+        return;
+      }
+
+      let vx = 0;
+      let vy = 0;
+      let omega = 0;
+
+      // 1. Kiểm tra phím cứng bàn phím
+      if (pressedKeys.has('KeyW') || pressedKeys.has('ArrowUp')) vy += 1.0;
+      if (pressedKeys.has('KeyS') || pressedKeys.has('ArrowDown')) vy -= 1.0;
+      if (pressedKeys.has('KeyA')) vx -= 1.0;
+      if (pressedKeys.has('KeyD')) vx += 1.0;
+      if (pressedKeys.has('KeyQ') || pressedKeys.has('ArrowLeft')) omega += 1.0; // CCW (xoay trái)
+      if (pressedKeys.has('KeyE') || pressedKeys.has('ArrowRight')) omega -= 1.0; // CW (xoay phải)
+
+      // 2. Kết hợp với nút D-Pad ảo đang được bấm giữ
+      if (currentVirtualCmd) {
+        switch (currentVirtualCmd) {
+          case 'forward': vy += 1.0; break;
+          case 'backward': vy -= 1.0; break;
+          case 'left': vx -= 1.0; break;
+          case 'right': vx += 1.0; break;
+          case 'fwd_left': vy += 0.707; vx -= 0.707; break;
+          case 'fwd_right': vy += 0.707; vx += 0.707; break;
+          case 'back_left': vy -= 0.707; vx -= 0.707; break;
+          case 'back_right': vy -= 0.707; vx += 0.707; break;
+          case 'rot_ccw': omega += 1.0; break;
+          case 'rot_cw': omega -= 1.0; break;
+          case 'stop':
+            vx = 0; vy = 0; omega = 0;
+            break;
+        }
+      }
+
+      // Chuẩn hóa vector vận tốc tịnh tiến (tránh đi chéo nhanh hơn đi thẳng)
+      const mag = Math.hypot(vx, vy);
+      if (mag > 1.0) {
+        vx /= mag;
+        vy /= mag;
+      }
+
+      // Nhân với cấu hình vận tốc tối đa V_max và Omega_max
+      robotState.targetVx = vx * ROBOT_CONFIG.vMax;
+      robotState.targetVy = vy * ROBOT_CONFIG.vMax;
+      robotState.targetOmega = omega * ROBOT_CONFIG.wMax;
+
+      // Gửi lệnh qua WebSocket nếu đang kết nối hardware
+      sendWebSocketMotion();
+    }
+
+    /**
+     * Dừng khẩn cấp mọi chuyển động lập tức
+     */
+    function emergencyStop() {
+      pressedKeys.clear();
+      currentVirtualCmd = null;
+      robotState.targetVx = 0;
+      robotState.targetVy = 0;
+      robotState.targetOmega = 0;
+      robotState.vx = 0;
+      robotState.vy = 0;
+      robotState.omega = 0;
+
+      // Hủy nhiệm vụ quỹ đạo nếu đang chạy
+      if (typeof missionState !== 'undefined' && missionState.isRunning) {
+        stopMission(false);
+      }
+
+      // Xóa highlight active-key trên mọi nút
+      document.querySelectorAll('.active-key').forEach(el => el.classList.remove('active-key'));
+
+      // Gửi lệnh phanh gấp tới ESP32 nếu có
+      sendWebSocketForceStop();
+    }
+
+    // --- SỰ KIỆN BÀN PHÍM CỨNG ---
+    window.addEventListener('keydown', (e) => {
+      // Tránh cướp phím khi đang nhập liệu input
+      if (e.target.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        emergencyStop();
+        const badge = document.getElementById('keySpace');
+        if (badge) badge.classList.add('active-key');
+        const btnStop = document.getElementById('btnStop');
+        if (btnStop) btnStop.classList.add('active-key');
+        return;
+      }
+
+      const validCodes = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      if (validCodes.includes(e.code)) {
+        e.preventDefault();
+        pressedKeys.add(e.code);
+        evaluateTargetVelocity();
+        updateKeyBadgesUI();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        const badge = document.getElementById('keySpace');
+        if (badge) badge.classList.remove('active-key');
+        const btnStop = document.getElementById('btnStop');
+        if (btnStop) btnStop.classList.remove('active-key');
+      }
+
+      if (pressedKeys.has(e.code)) {
+        pressedKeys.delete(e.code);
+        evaluateTargetVelocity();
+        updateKeyBadgesUI();
+      }
+    });
+
+    function updateKeyBadgesUI() {
+      const map = {
+        'KeyW': 'keyW', 'KeyA': 'keyA', 'KeyS': 'keyS', 'KeyD': 'keyD',
+        'KeyQ': 'keyQ', 'KeyE': 'keyE'
+      };
+      for (const [code, id] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el) {
+          if (pressedKeys.has(code)) el.classList.add('active-key');
+          else el.classList.remove('active-key');
+        }
+      }
+    }
+
+    // --- SỰ KIỆN BỘ PHÍM D-PAD ẢO (HOLD TO RUN, RELEASE TO STOP) ---
+    document.querySelectorAll('.dpad-btn, .stop-btn').forEach(btn => {
+      const cmd = btn.dataset.cmd;
+
+      function startAction(e) {
+        e.preventDefault();
+        if (cmd === 'stop') {
+          emergencyStop();
+          btn.classList.add('active-key');
+          setTimeout(() => btn.classList.remove('active-key'), 200);
+          return;
+        }
+        currentVirtualCmd = cmd;
+        btn.classList.add('active-key');
+        evaluateTargetVelocity();
+      }
+
+      function endAction(e) {
+        e.preventDefault();
+        if (currentVirtualCmd === cmd) {
+          currentVirtualCmd = null;
+          btn.classList.remove('active-key');
+          evaluateTargetVelocity();
+        }
+      }
+
+      btn.addEventListener('pointerdown', (e) => {
+        btn.setPointerCapture(e.pointerId);
+        startAction(e);
+      });
+
+      btn.addEventListener('pointerup', (e) => {
+        try { btn.releasePointerCapture(e.pointerId); } catch (_) { }
+        endAction(e);
+      });
+
+      btn.addEventListener('pointercancel', endAction);
+    });
+
+    // ==============================================================================
+    // CANVAS INTERACTION (PAN & ZOOM & CONTROLS)
+    // ==============================================================================
+
+    // Zoom bằng cuộn chuột
+    canvasContainer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+      const rect = canvasContainer.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Zoom tại vị trí con trỏ chuột
+      const newScale = Math.min(Math.max(viewport.scale * zoomFactor, viewport.minScale), viewport.maxScale);
+      const ratio = newScale / viewport.scale;
+
+      viewport.offsetX = mouseX - (mouseX - viewport.offsetX) * ratio;
+      viewport.offsetY = mouseY - (mouseY - viewport.offsetY) * ratio;
+      viewport.scale = newScale;
+    }, { passive: false });
+
+    // Pan bằng kéo chuột
+    canvasContainer.addEventListener('pointerdown', (e) => {
+      // Chỉ pan khi bấm chuột trái và không phải nút điều khiển nổi
+      if (e.button !== 0) return;
+      viewport.isDragging = true;
+      viewport.lastMouseX = e.clientX;
+      viewport.lastMouseY = e.clientY;
+      canvasContainer.setPointerCapture(e.pointerId);
+    });
+
+    canvasContainer.addEventListener('pointermove', (e) => {
+      if (!viewport.isDragging) return;
+      const dx = e.clientX - viewport.lastMouseX;
+      const dy = e.clientY - viewport.lastMouseY;
+      viewport.lastMouseX = e.clientX;
+      viewport.lastMouseY = e.clientY;
+
+      viewport.offsetX += dx;
+      viewport.offsetY += dy;
+
+      // Nếu người dùng chủ động kéo chuột thì tạm bỏ theo dõi robot
+      if (viewport.followRobot && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+        viewport.followRobot = false;
+        document.getElementById('chkFollowRobot').checked = false;
+      }
+    });
+
+    function stopDrag(e) {
+      if (viewport.isDragging) {
+        viewport.isDragging = false;
+        try { canvasContainer.releasePointerCapture(e.pointerId); } catch (_) { }
+      }
+    }
+    canvasContainer.addEventListener('pointerup', stopDrag);
+    canvasContainer.addEventListener('pointercancel', stopDrag);
+
+    // Các nút nổi trên Canvas
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      viewport.scale = Math.min(viewport.scale * 1.25, viewport.maxScale);
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      viewport.scale = Math.max(viewport.scale / 1.25, viewport.minScale);
+    });
+    document.getElementById('btnResetView').addEventListener('click', () => {
+      const rect = canvasContainer.getBoundingClientRect();
+      viewport.scale = 120;
+      viewport.offsetX = rect.width / 2;
+      viewport.offsetY = rect.height / 2;
+    });
+    document.getElementById('btnResetPose').addEventListener('click', () => {
+      robotState.x = 0;
+      robotState.y = 0;
+      robotState.theta = 0;
+      emergencyStop();
+    });
+    document.getElementById('btnToggleTrail').addEventListener('click', () => {
+      trajectory.enabled = !trajectory.enabled;
+      document.getElementById('trailStatusText').innerText = trajectory.enabled ? 'ON' : 'OFF';
+      document.getElementById('btnToggleTrail').classList.toggle('bg-cyber-cyan/20', trajectory.enabled);
+    });
+    document.getElementById('btnClearTrail').addEventListener('click', () => {
+      trajectory.points = [];
+    });
+    document.getElementById('chkFollowRobot').addEventListener('change', (e) => {
+      viewport.followRobot = e.target.checked;
+    });
+
+    // ==============================================================================
+    // THANH TRƯỢT CẤU HÌNH THÔNG SỐ (SLIDERS)
+    // ==============================================================================
+    const sliderVmax = document.getElementById('sliderVmax');
+    const vMaxDisplay = document.getElementById('vMaxDisplay');
+    const inputL = document.getElementById('inputL');
+    const valLDisplay = document.getElementById('valLDisplay');
+    const inputR = document.getElementById('inputR');
+    const valRDisplay = document.getElementById('valRDisplay');
+
+    function syncSpeedToHardware() {
+      if (!wsBridge.connected || !wsBridge.ws || wsBridge.ws.readyState !== WebSocket.OPEN) return;
+      const r = ROBOT_CONFIG.r || 0.05;
+      const rpm = Math.round((ROBOT_CONFIG.vMax * 60) / (2 * Math.PI * r));
+      const clampedRpm = Math.max(10, Math.min(350, rpm));
+      wsBridge.ws.send(`S:${clampedRpm}`);
+    }
+
+    function updateSpeedDisplays() {
+      const r = ROBOT_CONFIG.r || 0.05;
+      const rpm = Math.round((ROBOT_CONFIG.vMax * 60) / (2 * Math.PI * r));
+      vMaxDisplay.innerText = `${ROBOT_CONFIG.vMax.toFixed(2)} m/s (~${rpm} RPM)`;
+    }
+
+    sliderVmax.addEventListener('input', (e) => {
+      ROBOT_CONFIG.vMax = parseFloat(e.target.value);
+      updateSpeedDisplays();
+      syncSpeedToHardware();
+      evaluateTargetVelocity();
+    });
+
+    const sliderWmax = document.getElementById('sliderWmax');
+    const wMaxDisplay = document.getElementById('wMaxDisplay');
+    sliderWmax.addEventListener('input', (e) => {
+      const deg = parseFloat(e.target.value);
+      ROBOT_CONFIG.wMax = deg * (Math.PI / 180);
+      wMaxDisplay.innerText = `${deg} °/s`;
+      evaluateTargetVelocity();
+    });
+
+    document.getElementById('chkAccelRamp').addEventListener('change', (e) => {
+      ROBOT_CONFIG.accelRamp = e.target.checked;
+    });
+
+    const chkInvertRotation = document.getElementById('chkInvertRotation');
+    if (chkInvertRotation) {
+      chkInvertRotation.addEventListener('change', (e) => {
+        ROBOT_CONFIG.invertRotation = e.target.checked;
+      });
+    }
+
+    document.getElementById('btnResetConfig').addEventListener('click', () => {
+      sliderVmax.value = 1.0;
+      ROBOT_CONFIG.vMax = 1.0;
+
+      sliderWmax.value = 90;
+      ROBOT_CONFIG.wMax = 90 * (Math.PI / 180);
+      wMaxDisplay.innerText = '90 °/s';
+
+      document.getElementById('chkAccelRamp').checked = true;
+      ROBOT_CONFIG.accelRamp = true;
+
+      if (chkInvertRotation) {
+        chkInvertRotation.checked = false;
+        ROBOT_CONFIG.invertRotation = false;
+      }
+
+      inputL.value = 0.375;
+      ROBOT_CONFIG.L = 0.375;
+      valLDisplay.innerText = '0.375 m';
+
+      inputR.value = 0.05;
+      ROBOT_CONFIG.r = 0.05;
+      valRDisplay.innerText = '0.050 m';
+
+      updateSpeedDisplays();
+      syncSpeedToHardware();
+      evaluateTargetVelocity();
+    });
+
+    inputL.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) {
+        ROBOT_CONFIG.L = val;
+        valLDisplay.innerText = `${val.toFixed(3)} m`;
+        evaluateTargetVelocity();
+      }
+    });
+
+    inputR.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) {
+        ROBOT_CONFIG.r = val;
+        valRDisplay.innerText = `${val.toFixed(3)} m`;
+        updateSpeedDisplays();
+        syncSpeedToHardware();
+        evaluateTargetVelocity();
+      }
+    });
+
+    // Khởi tạo hiển thị vận tốc và RPM chuẩn ban đầu
+    updateSpeedDisplays();
+
+    // ==============================================================================
+    // WEBSOCKET HARDWARE BRIDGE (ESP32-S3 / ARDUINO / ROS2)
+    // ==============================================================================
+
+    /**
+     * Gửi định dạng gói tin chuyển động: M:vx,vy,w (-1.0 đến 1.0)
+     */
+    function sendWebSocketMotion() {
+      if (!wsBridge.connected || !wsBridge.ws || wsBridge.ws.readyState !== WebSocket.OPEN) return;
+
+      // Chuẩn hóa về dải [-1.0, 1.0] gửi tới ESP32
+      let normVx = (robotState.targetVx / (ROBOT_CONFIG.vMax || 1.0));
+      let normVy = (robotState.targetVy / (ROBOT_CONFIG.vMax || 1.0));
+      let normW = (robotState.targetOmega / (ROBOT_CONFIG.wMax || 1.0));
+
+      if (ROBOT_CONFIG.invertRotation) {
+        normW = -normW;
+      }
+
+      // Chống dồn ứ hàng đợi (buffer amount check)
+      if (wsBridge.ws.bufferedAmount < 512) {
+        wsBridge.ws.send(`M:${normVx.toFixed(2)},${normVy.toFixed(2)},${normW.toFixed(2)}`);
+      }
+    }
+
+    /**
+     * Lệnh gửi phanh dừng khẩn cấp liên tiếp 3 lần
+     */
+    function sendWebSocketForceStop() {
+      if (!wsBridge.connected || !wsBridge.ws || wsBridge.ws.readyState !== WebSocket.OPEN) return;
+      const stopCmd = 'M:0.00,0.00,0.00';
+      wsBridge.ws.send(stopCmd);
+      setTimeout(() => { if (wsBridge.ws && wsBridge.ws.readyState === WebSocket.OPEN) wsBridge.ws.send(stopCmd); }, 25);
+      setTimeout(() => { if (wsBridge.ws && wsBridge.ws.readyState === WebSocket.OPEN) wsBridge.ws.send(stopCmd); }, 60);
+    }
+
+    function connectWebSocket() {
+      const url = document.getElementById('wsUrlInput').value.trim();
+      wsBridge.url = url;
+
+      updateWsStatus('CONNECTING...', '#f59e0b');
+
+      try {
+        wsBridge.ws = new WebSocket(url);
+
+        wsBridge.ws.onopen = () => {
+          wsBridge.connected = true;
+          updateWsStatus('CONNECTED', '#10b981');
+          document.getElementById('btnWsConnectToggle').innerText = 'Ngắt Kết Nối';
+          document.getElementById('btnWsConnectToggle').classList.replace('bg-cyber-cyan', 'bg-rose-600');
+          document.getElementById('btnWsConnectToggle').classList.replace('text-cyber-900', 'text-white');
+
+          // Đồng bộ trạng thái ENA và tốc độ RPM tới phần cứng ESP32
+          if (wsBridge.ws && wsBridge.ws.readyState === WebSocket.OPEN) {
+            wsBridge.ws.send(isEnaEnabled ? 'E:1' : 'E:0');
+            syncSpeedToHardware();
+          }
+
+          // Bắt đầu vòng lặp gửi đều đặn mỗi 45ms (~22 FPS)
+          if (wsBridge.sendTimer) clearInterval(wsBridge.sendTimer);
+          wsBridge.sendTimer = setInterval(() => {
+            if (robotState.targetVx !== 0 || robotState.targetVy !== 0 || robotState.targetOmega !== 0) {
+              sendWebSocketMotion();
+            }
+          }, wsBridge.sendIntervalMs);
+        };
+
+        wsBridge.ws.onmessage = (e) => {
+          // Nhận phản hồi trạng thái từ ESP32 (STATE:E=1,INV=0...)
+          if (typeof e.data === 'string') {
+            if (e.data.startsWith('STATE:')) {
+              const match = e.data.match(/E=(\d)/);
+              if (match) {
+                const hwEna = match[1] === '1';
+                if (hwEna !== isEnaEnabled) {
+                  setEnaState(hwEna, false); // sync từ phần cứng không gửi phản hồi ngược lại
+                }
+              }
+            }
+          }
+        };
+
+        wsBridge.ws.onclose = () => {
+          wsBridge.connected = false;
+          if (wsBridge.sendTimer) clearInterval(wsBridge.sendTimer);
+          updateWsStatus('DISCONNECTED', '#64748b');
+          document.getElementById('btnWsConnectToggle').innerText = 'Kết Nối';
+          document.getElementById('btnWsConnectToggle').classList.replace('bg-rose-600', 'bg-cyber-cyan');
+          document.getElementById('btnWsConnectToggle').classList.replace('text-white', 'text-cyber-900');
+        };
+
+        wsBridge.ws.onerror = (err) => {
+          console.error('[WS Error]:', err);
+          if (wsBridge.ws) wsBridge.ws.close();
+        };
+
+      } catch (err) {
+        console.error('Không thể tạo kết nối WebSocket:', err);
+        updateWsStatus('ERROR', '#ef4444');
+      }
+    }
+
+    function disconnectWebSocket() {
+      if (wsBridge.ws) {
+        wsBridge.ws.close();
+      }
+      wsBridge.connected = false;
+    }
+
+    function updateWsStatus(text, color) {
+      document.getElementById('wsStatusText').innerText = `WS: ${text}`;
+      document.getElementById('wsStatusDot').style.backgroundColor = color;
+      document.getElementById('wsStatusBadge').style.borderColor = `${color}66`;
+    }
+
+    // Modal WebSocket Dialog Events
+    document.getElementById('btnOpenWsModal').addEventListener('click', () => {
+      document.getElementById('wsModal').classList.remove('hidden');
+    });
+    document.getElementById('btnCloseWsModal').addEventListener('click', () => {
+      document.getElementById('wsModal').classList.add('hidden');
+    });
+    document.getElementById('btnSaveWsModal').addEventListener('click', () => {
+      document.getElementById('wsModal').classList.add('hidden');
+    });
+
+    document.getElementById('btnWsConnectToggle').addEventListener('click', () => {
+      if (wsBridge.connected) {
+        disconnectWebSocket();
+      } else {
+        connectWebSocket();
+      }
+    });
+
+
+    // ==============================================================================
+    // CHẾ ĐỘ ENABLE MOTOR DRIVER (ENA: KHÓA TRỤC / THẢ TỰ DO)
+    // ==============================================================================
+    function setEnaState(enabled, sendWs = true) {
+      isEnaEnabled = enabled;
+      const btn = document.getElementById('btnEnaToggle');
+      const dot = document.getElementById('enaDot');
+      const text = document.getElementById('enaText');
+
+      if (!btn || !dot || !text) return;
+
+      if (isEnaEnabled) {
+        btn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:brightness-110 transition shadow-neon-green cursor-pointer font-bold';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        text.innerText = 'ENA: KHÓA TRỤC (ON)';
+      } else {
+        btn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-400 hover:brightness-110 transition cursor-pointer font-bold';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        text.innerText = 'ENA: THẢ TỰ DO (OFF)';
+
+        // Tắt ENA: dừng mọi chuyển động lập tức
+        if (typeof missionState !== 'undefined' && missionState.isRunning) {
+          stopMission(true);
+        } else {
+          emergencyStop();
+        }
+      }
+
+      // Đồng bộ lệnh E:1 / E:0 tới ESP32 nếu đang kết nối
+      if (sendWs && wsBridge.connected && wsBridge.ws && wsBridge.ws.readyState === WebSocket.OPEN) {
+        wsBridge.ws.send(isEnaEnabled ? 'E:1' : 'E:0');
+      }
+    }
+
+    const btnEnaToggle = document.getElementById('btnEnaToggle');
+    if (btnEnaToggle) {
+      btnEnaToggle.addEventListener('click', () => {
+        setEnaState(!isEnaEnabled, true);
+      });
+    }
+
+    // ==============================================================================
+    // CHUYỂN TAB: THỦ CÔNG (D-PAD) <-> LẬP TRÌNH QUỸ ĐẠO <-> CẤU HÌNH
+    // ==============================================================================
+    const tabManualBtn = document.getElementById('tabManualBtn');
+    const tabMissionBtn = document.getElementById('tabMissionBtn');
+    const tabConfigBtn = document.getElementById('tabConfigBtn');
+    const panelManual = document.getElementById('panelManual');
+    const panelMission = document.getElementById('panelMission');
+    const panelConfig = document.getElementById('panelConfig');
+
+    const TAB_ACTIVE_CLASS = 'flex-1 py-1 px-1 rounded-md font-bold text-center transition bg-cyber-cyan text-cyber-900 shadow-neon-cyan cursor-pointer text-[11px]';
+    const TAB_INACTIVE_CLASS = 'flex-1 py-1 px-1 rounded-md font-bold text-center transition text-slate-400 hover:text-slate-200 cursor-pointer text-[11px]';
+
+    function switchTab(tab) {
+      if (panelManual) { panelManual.classList.add('hidden'); panelManual.classList.remove('flex'); }
+      if (panelMission) { panelMission.classList.add('hidden'); panelMission.classList.remove('flex'); }
+      if (panelConfig) { panelConfig.classList.add('hidden'); panelConfig.classList.remove('flex'); }
+
+      if (tabManualBtn) tabManualBtn.className = TAB_INACTIVE_CLASS;
+      if (tabMissionBtn) tabMissionBtn.className = TAB_INACTIVE_CLASS;
+      if (tabConfigBtn) tabConfigBtn.className = TAB_INACTIVE_CLASS;
+
+      if (tab === 'manual') {
+        if (panelManual) { panelManual.classList.remove('hidden'); panelManual.classList.add('flex'); }
+        if (tabManualBtn) tabManualBtn.className = TAB_ACTIVE_CLASS;
+      } else if (tab === 'mission') {
+        if (panelMission) { panelMission.classList.remove('hidden'); panelMission.classList.add('flex'); }
+        if (tabMissionBtn) tabMissionBtn.className = TAB_ACTIVE_CLASS;
+      } else if (tab === 'config') {
+        if (panelConfig) { panelConfig.classList.remove('hidden'); panelConfig.classList.add('flex'); }
+        if (tabConfigBtn) tabConfigBtn.className = TAB_ACTIVE_CLASS;
+      }
+    }
+
+    if (tabManualBtn) tabManualBtn.addEventListener('click', () => switchTab('manual'));
+    if (tabMissionBtn) tabMissionBtn.addEventListener('click', () => switchTab('mission'));
+    if (tabConfigBtn) tabConfigBtn.addEventListener('click', () => switchTab('config'));
+
+    // ==============================================================================
+    // HỆ THỐNG LẬP TRÌNH & CHẠY QUỸ ĐẠO TỰ ĐỘNG (TRAJECTORY MISSION PLANNER)
+    // ==============================================================================
+    const ACTION_MAP = {
+      forward: { name: 'Tiến', icon: '⬆', dir: { vx: 0, vy: 1, w: 0 }, unit: 'm', step: 0.1, defaultVal: 0.5 },
+      backward: { name: 'Lùi', icon: '⬇', dir: { vx: 0, vy: -1, w: 0 }, unit: 'm', step: 0.1, defaultVal: 0.5 },
+      left: { name: 'Sang Trái', icon: '⬅', dir: { vx: -1, vy: 0, w: 0 }, unit: 'm', step: 0.1, defaultVal: 2.0 },
+      right: { name: 'Sang Phải', icon: '➡', dir: { vx: 1, vy: 0, w: 0 }, unit: 'm', step: 0.1, defaultVal: 2.0 },
+      fwd_left: { name: 'Tiến - Trái', icon: '↖', dir: { vx: -0.7071, vy: 0.7071, w: 0 }, unit: 'm', step: 0.1, defaultVal: 1.0 },
+      fwd_right: { name: 'Tiến - Phải', icon: '↗', dir: { vx: 0.7071, vy: 0.7071, w: 0 }, unit: 'm', step: 0.1, defaultVal: 1.0 },
+      back_left: { name: 'Lùi - Trái', icon: '↙', dir: { vx: -0.7071, vy: -0.7071, w: 0 }, unit: 'm', step: 0.1, defaultVal: 1.0 },
+      back_right: { name: 'Lùi - Phải', icon: '↘', dir: { vx: 0.7071, vy: -0.7071, w: 0 }, unit: 'm', step: 0.1, defaultVal: 1.0 },
+      rot_ccw: { name: 'Xoay Trái CCW', icon: '⟲', dir: { vx: 0, vy: 0, w: 1 }, unit: '°', step: 15, defaultVal: 90 },
+      rot_cw: { name: 'Xoay Phải CW', icon: '⟳', dir: { vx: 0, vy: 0, w: -1 }, unit: '°', step: 15, defaultVal: 90 },
+      wait: { name: 'Dừng Nghỉ', icon: '⏸', dir: { vx: 0, vy: 0, w: 0 }, unit: 's', step: 0.5, defaultVal: 1.0 }
+    };
+
+    let missionStepIdGen = 10;
+
+    const missionState = {
+      steps: [
+        { id: 1, action: 'forward', val: 0.5, label: 'Tiến 0.50m' },
+        { id: 2, action: 'left', val: 2.0, label: 'Sang trái 2.00m' },
+        { id: 3, action: 'backward', val: 0.5, label: 'Lùi 0.50m' },
+        { id: 4, action: 'right', val: 2.0, label: 'Sang phải 2.00m' }
+      ],
+      isRunning: false,
+      isPaused: false,
+      currentStepIndex: -1,
+      loop: false,
+      stepDelay: 0.5,           // Số giây nghỉ giữa các bước (step delay)
+      smoothProfile: true,       // Khởi động và dừng với v_start = 0, v_end = 0
+      isDelaying: false,         // Đang trong thời gian nghỉ settle giữa 2 bước
+      delayRemaining: 0,         // Đếm ngược thời gian nghỉ (s)
+      stepStartPose: { x: 0, y: 0, theta: 0 },
+      accumulatedProgress: 0,
+      targetProgress: 0
+    };
+
+    function renderMissionStepsList() {
+      const container = document.getElementById('missionStepsList');
+      const countLabel = document.getElementById('missionStepsCount');
+      if (!container) return;
+
+      if (countLabel) countLabel.innerText = `${missionState.steps.length} bước`;
+
+      if (missionState.steps.length === 0) {
+        container.innerHTML = `<div class="text-center py-4 text-slate-500 text-[11px] italic">Chưa có bước nào trong quỹ đạo.<br>Hãy thêm bước bên dưới hoặc chọn mẫu nhanh!</div>`;
+        return;
+      }
+
+      container.innerHTML = missionState.steps.map((step, idx) => {
+        const meta = ACTION_MAP[step.action] || { name: step.action, icon: '•', unit: '' };
+        const isActive = missionState.isRunning && missionState.currentStepIndex === idx;
+        const activeClass = isActive
+          ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan font-bold shadow-neon-cyan ring-1 ring-cyber-cyan'
+          : 'bg-cyber-800/80 border-cyber-700/60 text-slate-300 hover:border-cyber-600';
+
+        return `
+          <div class="flex items-center justify-between p-1.5 rounded-lg border ${activeClass} text-[11px] transition">
+            <div class="flex items-center space-x-2 truncate">
+              <span class="w-4 h-4 rounded-full ${isActive ? 'bg-cyber-cyan text-cyber-900 font-extrabold animate-pulse' : 'bg-cyber-900 text-slate-400'} flex items-center justify-center text-[9px] shrink-0">${idx + 1}</span>
+              <span class="text-amber-400 font-bold shrink-0">${meta.icon}</span>
+              <span class="truncate">${step.label || meta.name}</span>
+            </div>
+            <div class="flex items-center space-x-1.5 shrink-0 ml-1">
+              <span class="text-slate-400 font-mono text-[10px]">${step.val} ${meta.unit}</span>
+              <button onclick="window.removeMissionStep(${step.id})" class="text-slate-500 hover:text-rose-400 px-1 py-0.5 rounded cursor-pointer transition text-[11px]" title="Xóa bước này">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.removeMissionStep = function (id) {
+      if (missionState.isRunning) {
+        alert('Vui lòng dừng nhiệm vụ trước khi chỉnh sửa danh sách bước!');
+        return;
+      }
+      missionState.steps = missionState.steps.filter(s => s.id !== id);
+      renderMissionStepsList();
+      updateMissionUI();
+    };
+
+    function addMissionStep(action, val, label) {
+      const meta = ACTION_MAP[action];
+      if (!meta) return;
+      missionState.steps.push({
+        id: ++missionStepIdGen,
+        action,
+        val,
+        label: label || `${meta.name} ${val}${meta.unit}`
+      });
+      renderMissionStepsList();
+      updateMissionUI();
+    }
+
+    function clearMissionSteps() {
+      if (missionState.isRunning) {
+        alert('Vui lòng dừng nhiệm vụ trước khi xóa danh sách!');
+        return;
+      }
+      missionState.steps = [];
+      renderMissionStepsList();
+      updateMissionUI();
+    }
+
+    function loadPreset(preset) {
+      if (missionState.isRunning) {
+        stopMission(true);
+      }
+
+      switch (preset) {
+        case 'custom':
+          missionState.steps = [
+            { id: ++missionStepIdGen, action: 'forward', val: 0.5, label: 'Tiến 0.50m' },
+            { id: ++missionStepIdGen, action: 'left', val: 2.0, label: 'Sang trái 2.00m' },
+            { id: ++missionStepIdGen, action: 'backward', val: 0.5, label: 'Lùi 0.50m' },
+            { id: ++missionStepIdGen, action: 'right', val: 2.0, label: 'Sang phải 2.00m' }
+          ];
+          break;
+        case 'square':
+          missionState.steps = [
+            { id: ++missionStepIdGen, action: 'forward', val: 1.0, label: 'Tiến 1.00m' },
+            { id: ++missionStepIdGen, action: 'right', val: 1.0, label: 'Sang phải 1.00m' },
+            { id: ++missionStepIdGen, action: 'backward', val: 1.0, label: 'Lùi 1.00m' },
+            { id: ++missionStepIdGen, action: 'left', val: 1.0, label: 'Sang trái 1.00m' }
+          ];
+          break;
+        case 'triangle':
+          missionState.steps = [
+            { id: ++missionStepIdGen, action: 'forward', val: 1.0, label: 'Tiến 1.00m' },
+            { id: ++missionStepIdGen, action: 'rot_ccw', val: 120, label: 'Xoay trái 120°' },
+            { id: ++missionStepIdGen, action: 'forward', val: 1.0, label: 'Tiến 1.00m' },
+            { id: ++missionStepIdGen, action: 'rot_ccw', val: 120, label: 'Xoay trái 120°' },
+            { id: ++missionStepIdGen, action: 'forward', val: 1.0, label: 'Tiến 1.00m' },
+            { id: ++missionStepIdGen, action: 'rot_ccw', val: 120, label: 'Xoay trái 120°' }
+          ];
+          break;
+        case 'zigzag':
+          missionState.steps = [
+            { id: ++missionStepIdGen, action: 'fwd_right', val: 1.0, label: 'Tiến - Phải 1.00m' },
+            { id: ++missionStepIdGen, action: 'fwd_left', val: 1.0, label: 'Tiến - Trái 1.00m' },
+            { id: ++missionStepIdGen, action: 'fwd_right', val: 1.0, label: 'Tiến - Phải 1.00m' },
+            { id: ++missionStepIdGen, action: 'backward', val: 1.5, label: 'Lùi 1.50m' }
+          ];
+          break;
+      }
+
+      renderMissionStepsList();
+      updateMissionUI();
+    }
+
+    /**
+     * Tính toán hệ số vận tốc mượt S-Curve hình sin / hình thang (v_start = 0, v_end = 0)
+     * Triệt tiêu hoàn toàn hiện tượng trượt quán tính (ví dụ: quay 90° dừng đúng 90.0°, không bị trượt tới 100°)
+     */
+    function getSmoothVelocityFactor(current, total) {
+      if (total <= 0.0001) return 0;
+      const p = Math.max(0, Math.min(1.0, current / total));
+
+      // 25% đầu tăng tốc từ 0.10 lên 1.0 (khởi hành êm dịu, không giật cục)
+      // 35% cuối giảm tốc mượt từ 1.0 về 0.15 (hãm phanh mượt mà, triệt tiêu quán tính trượt)
+      const accP = 0.25;
+      const decP = 0.35;
+
+      let factor = 1.0;
+
+      if (p < accP) {
+        // Tăng tốc S-Curve hình sin: khởi động êm ái
+        const ramp = 0.5 * (1 - Math.cos(Math.PI * (p / accP)));
+        factor = 0.10 + 0.90 * ramp;
+      } else if (p > (1.0 - decP)) {
+        // Giảm tốc S-Curve hình sin: hãm phanh mượt về tốc độ bò an toàn 0.15
+        const decFraction = (p - (1.0 - decP)) / decP;
+        const ramp = 0.5 * (1 + Math.cos(Math.PI * decFraction));
+        factor = 0.15 + 0.85 * ramp;
+      } else {
+        factor = 1.0;
+      }
+
+      return factor;
+    }
+
+    function startStep(idx) {
+      if (idx >= missionState.steps.length) {
+        if (missionState.loop && missionState.steps.length > 0) {
+          startStep(0);
+        } else {
+          stopMission(true);
+        }
+        return;
+      }
+
+      missionState.isDelaying = false;
+      missionState.delayRemaining = 0;
+      missionState.currentStepIndex = idx;
+      missionState.accumulatedProgress = 0;
+      missionState.stepStartPose = {
+        x: robotState.x,
+        y: robotState.y,
+        theta: robotState.theta
+      };
+
+      // Đảm bảo vận tốc khởi đầu v_start = 0
+      robotState.targetVx = 0; robotState.vx = 0;
+      robotState.targetVy = 0; robotState.vy = 0;
+      robotState.targetOmega = 0; robotState.omega = 0;
+
+      const step = missionState.steps[idx];
+      const meta = ACTION_MAP[step.action];
+
+      if (step.action === 'rot_ccw' || step.action === 'rot_cw') {
+        missionState.targetProgress = step.val * (Math.PI / 180.0); // Chuyển đổi sang radian
+      } else {
+        missionState.targetProgress = step.val;
+      }
+
+      renderMissionStepsList();
+      updateMissionUI();
+    }
+
+    function startMission() {
+      if (missionState.steps.length === 0) {
+        alert('Chưa có bước nào trong quỹ đạo! Hãy thêm bước trước khi chạy.');
+        return;
+      }
+
+      // Đọc các thiết lập Step Delay và Smooth Profile mới nhất từ giao diện
+      const delayInput = document.getElementById('inputStepDelay');
+      if (delayInput) {
+        const val = parseFloat(delayInput.value);
+        if (!isNaN(val) && val >= 0) missionState.stepDelay = val;
+      }
+      const smoothInput = document.getElementById('chkSmoothProfile');
+      if (smoothInput) {
+        missionState.smoothProfile = smoothInput.checked;
+      }
+
+      // Tự động bật ENA nếu đang tắt để cho phép động cơ quay
+      if (!isEnaEnabled) {
+        setEnaState(true, true);
+      }
+
+      if (missionState.isPaused) {
+        missionState.isPaused = false;
+      } else {
+        missionState.isRunning = true;
+        missionState.isPaused = false;
+        missionState.isDelaying = false;
+        missionState.delayRemaining = 0;
+        startStep(0);
+      }
+
+      updateMissionUI();
+    }
+
+    function pauseMission() {
+      if (!missionState.isRunning) return;
+
+      missionState.isPaused = !missionState.isPaused;
+      if (missionState.isPaused) {
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = 0;
+        sendWebSocketForceStop();
+      }
+
+      updateMissionUI();
+    }
+
+    function stopMission(triggerEmergency = true) {
+      missionState.isRunning = false;
+      missionState.isPaused = false;
+      missionState.isDelaying = false;
+      missionState.delayRemaining = 0;
+      missionState.currentStepIndex = -1;
+      missionState.accumulatedProgress = 0;
+
+      if (triggerEmergency) {
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = 0;
+        robotState.vx = 0;
+        robotState.vy = 0;
+        robotState.omega = 0;
+        sendWebSocketForceStop();
+      }
+
+      renderMissionStepsList();
+      updateMissionUI();
+    }
+
+    function updateMissionUI() {
+      const statusBadge = document.getElementById('missionStatusBadge');
+      const stepDetail = document.getElementById('missionStepDetail');
+      const stepCounter = document.getElementById('missionStepCounter');
+      const progressBar = document.getElementById('missionStepProgressBar');
+      const btnRun = document.getElementById('btnMissionRun');
+      const btnPause = document.getElementById('btnMissionPause');
+
+      if (!statusBadge || !stepDetail || !stepCounter || !progressBar || !btnRun || !btnPause) return;
+
+      if (missionState.isRunning && !missionState.isPaused) {
+        // Trạng thái nghỉ giữa các bước (Step Delay)
+        if (missionState.isDelaying) {
+          const delaySec = Math.max(0, missionState.delayRemaining).toFixed(1);
+          statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse';
+          statusBadge.innerText = `NGHỈ CHỜ (${delaySec}s)`;
+
+          const nextIdx = missionState.currentStepIndex + 2;
+          const totalSteps = missionState.steps.length;
+          const nextStepLabel = (nextIdx <= totalSteps)
+            ? `Dừng ổn định. Chuẩn bị bước ${nextIdx}/${totalSteps}...`
+            : (missionState.loop ? `Dừng ổn định. Chuẩn bị lặp lại...` : `Dừng ổn định. Chuẩn bị hoàn thành...`);
+
+          stepDetail.innerText = `⏸ ${nextStepLabel}`;
+          progressBar.style.width = '100%';
+          return;
+        }
+
+        const stepNum = missionState.currentStepIndex + 1;
+        const totalSteps = missionState.steps.length;
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse';
+        statusBadge.innerText = `ĐANG CHẠY (${stepNum}/${totalSteps})`;
+
+        const curStep = missionState.steps[missionState.currentStepIndex];
+        const meta = curStep ? ACTION_MAP[curStep.action] : null;
+        stepDetail.innerText = curStep ? `${meta ? meta.icon : ''} ${curStep.label}` : 'Đang xử lý...';
+        stepCounter.innerText = `${stepNum} / ${totalSteps}`;
+
+        btnRun.classList.add('opacity-60');
+        btnRun.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>CHẠY</span>`;
+        btnPause.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg><span>TẠM DỪNG</span>`;
+      } else if (missionState.isPaused) {
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        statusBadge.innerText = 'TẠM DỪNG';
+
+        btnRun.classList.remove('opacity-60');
+        btnRun.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>TIẾP TỤC</span>`;
+        btnPause.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>TIẾP TỤC</span>`;
+      } else {
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        statusBadge.innerText = 'SẴN SÀNG (IDLE)';
+        stepDetail.innerText = 'Chưa bắt đầu';
+        stepCounter.innerText = `0 / ${missionState.steps.length}`;
+        progressBar.style.width = '0%';
+
+        btnRun.classList.remove('opacity-60');
+        btnRun.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>CHẠY</span>`;
+        btnPause.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg><span>TẠM DỪNG</span>`;
+      }
+    }
+
+    /**
+     * Vòng lặp vật lý gọi hàm này mỗi chu kỳ dt để kiểm tra tiến trình bước quỹ đạo
+     */
+    function updateMissionExecution(dt) {
+      if (!missionState.isRunning || missionState.isPaused) return;
+
+      // 1. Kiểm tra trạng thái nghỉ giữa các bước (Step Delay)
+      if (missionState.isDelaying) {
+        missionState.delayRemaining -= dt;
+        // Giữ vận tốc robot tuyệt đối ở mức 0 khi nghỉ
+        robotState.targetVx = 0; robotState.vx = 0;
+        robotState.targetVy = 0; robotState.vy = 0;
+        robotState.targetOmega = 0; robotState.omega = 0;
+
+        updateMissionUI();
+
+        if (missionState.delayRemaining <= 0) {
+          missionState.isDelaying = false;
+          startStep(missionState.currentStepIndex + 1);
+        }
+        return;
+      }
+
+      const step = missionState.steps[missionState.currentStepIndex];
+      if (!step) {
+        if (missionState.loop && missionState.steps.length > 0) {
+          startStep(0);
+        } else {
+          stopMission(true);
+        }
+        return;
+      }
+
+      const meta = ACTION_MAP[step.action];
+      if (!meta) return;
+
+      let stepDone = false;
+      let progressPct = 0;
+
+      if (step.action === 'wait') {
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = 0;
+
+        missionState.accumulatedProgress += dt;
+        progressPct = missionState.targetProgress > 0
+          ? Math.min(100, (missionState.accumulatedProgress / missionState.targetProgress) * 100)
+          : 100;
+
+        if (missionState.accumulatedProgress >= missionState.targetProgress) {
+          stepDone = true;
+        }
+      } else if (step.action === 'rot_ccw' || step.action === 'rot_cw') {
+        // Tính hệ số vận tốc mượt S-Curve (v_start = 0, v_end = 0)
+        const velFactor = missionState.smoothProfile
+          ? getSmoothVelocityFactor(missionState.accumulatedProgress, missionState.targetProgress)
+          : 1.0;
+
+        robotState.targetVx = 0;
+        robotState.targetVy = 0;
+        robotState.targetOmega = meta.dir.w * ROBOT_CONFIG.wMax * velFactor;
+
+        missionState.accumulatedProgress += Math.abs(robotState.omega) * dt;
+        progressPct = missionState.targetProgress > 0
+          ? Math.min(100, (missionState.accumulatedProgress / missionState.targetProgress) * 100)
+          : 100;
+
+        if (missionState.accumulatedProgress >= missionState.targetProgress) {
+          stepDone = true;
+          // Khóa chuẩn xác góc hướng đích, triệt tiêu quán tính góc dư thừa
+          robotState.theta = missionState.stepStartPose.theta + meta.dir.w * missionState.targetProgress;
+          while (robotState.theta > Math.PI) robotState.theta -= 2 * Math.PI;
+          while (robotState.theta < -Math.PI) robotState.theta += 2 * Math.PI;
+          robotState.omega = 0;
+          robotState.targetOmega = 0;
+        }
+      } else {
+        // Tịnh tiến theo hướng
+        const dx = robotState.x - missionState.stepStartPose.x;
+        const dy = robotState.y - missionState.stepStartPose.y;
+        const dist = Math.hypot(dx, dy);
+
+        // Tính hệ số vận tốc mượt S-Curve (v_start = 0, v_end = 0)
+        const velFactor = missionState.smoothProfile
+          ? getSmoothVelocityFactor(dist, missionState.targetProgress)
+          : 1.0;
+
+        robotState.targetVx = meta.dir.vx * ROBOT_CONFIG.vMax * velFactor;
+        robotState.targetVy = meta.dir.vy * ROBOT_CONFIG.vMax * velFactor;
+        robotState.targetOmega = 0;
+
+        progressPct = missionState.targetProgress > 0
+          ? Math.min(100, (dist / missionState.targetProgress) * 100)
+          : 100;
+
+        if (dist >= missionState.targetProgress) {
+          stepDone = true;
+          // Khóa chuẩn xác tọa độ đích theo hệ quy chiếu thế giới (World Frame) từ góc hướng theta
+          const th = missionState.stepStartPose.theta;
+          const bodyDx = meta.dir.vx * missionState.targetProgress;
+          const bodyDy = meta.dir.vy * missionState.targetProgress;
+          const worldDx = bodyDx * Math.cos(th) - bodyDy * Math.sin(th);
+          const worldDy = bodyDx * Math.sin(th) + bodyDy * Math.cos(th);
+          robotState.x = missionState.stepStartPose.x + worldDx;
+          robotState.y = missionState.stepStartPose.y + worldDy;
+          robotState.vx = 0;
+          robotState.vy = 0;
+          robotState.targetVx = 0;
+          robotState.targetVy = 0;
+        }
+      }
+
+      // Cập nhật thanh tiến độ bước trực tiếp
+      const pBar = document.getElementById('missionStepProgressBar');
+      if (pBar) pBar.style.width = `${progressPct.toFixed(1)}%`;
+
+      // Truyền lệnh vận tốc thời gian thực xuống ESP32 qua WebSocket (~30ms một gói)
+      const nowMs = performance.now();
+      if (!missionState.lastWsSendTime || (nowMs - missionState.lastWsSendTime) >= 30) {
+        sendWebSocketMotion();
+        missionState.lastWsSendTime = nowMs;
+      }
+
+      if (stepDone) {
+        // Dừng xe hoàn toàn và phát lệnh phanh tới ESP32
+        robotState.targetVx = 0; robotState.vx = 0;
+        robotState.targetVy = 0; robotState.vy = 0;
+        robotState.targetOmega = 0; robotState.omega = 0;
+        sendWebSocketForceStop();
+
+        // Kiểm tra cài đặt Step Delay
+        const delayInput = document.getElementById('inputStepDelay');
+        const delayVal = delayInput ? parseFloat(delayInput.value) : missionState.stepDelay;
+        missionState.stepDelay = isNaN(delayVal) ? 0.5 : Math.max(0, delayVal);
+
+        const nextIdx = missionState.currentStepIndex + 1;
+        const hasNext = (nextIdx < missionState.steps.length) || (missionState.loop && missionState.steps.length > 0);
+
+        if (hasNext && missionState.stepDelay > 0.05) {
+          missionState.isDelaying = true;
+          missionState.delayRemaining = missionState.stepDelay;
+          updateMissionUI();
+        } else {
+          startStep(nextIdx);
+        }
+      }
+    }
+
+    // Gắn sự kiện các nút điều khiển Mission
+    document.getElementById('btnMissionRun').addEventListener('click', () => {
+      startMission();
+    });
+
+    document.getElementById('btnMissionPause').addEventListener('click', () => {
+      pauseMission();
+    });
+
+    document.getElementById('btnMissionStop').addEventListener('click', () => {
+      stopMission(true);
+    });
+
+    document.getElementById('chkMissionLoop').addEventListener('change', (e) => {
+      missionState.loop = e.target.checked;
+    });
+
+    const inputStepDelay = document.getElementById('inputStepDelay');
+    if (inputStepDelay) {
+      inputStepDelay.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val >= 0) {
+          missionState.stepDelay = val;
+        }
+      });
+    }
+
+    const chkSmoothProfile = document.getElementById('chkSmoothProfile');
+    if (chkSmoothProfile) {
+      chkSmoothProfile.addEventListener('change', (e) => {
+        missionState.smoothProfile = e.target.checked;
+      });
+    }
+
+    document.getElementById('btnClearMissionSteps').addEventListener('click', () => {
+      clearMissionSteps();
+    });
+
+    // Các mẫu nhanh (Presets)
+    document.getElementById('presetCustomExample').addEventListener('click', () => loadPreset('custom'));
+    document.getElementById('presetSquare').addEventListener('click', () => loadPreset('square'));
+    document.getElementById('presetTriangle').addEventListener('click', () => loadPreset('triangle'));
+    document.getElementById('presetZigzag').addEventListener('click', () => loadPreset('zigzag'));
+
+    // Gắn sự kiện thay đổi loại bước trong Form thêm bước
+    const selStepAction = document.getElementById('selStepAction');
+    const numStepVal = document.getElementById('numStepVal');
+    const unitStepLabel = document.getElementById('unitStepLabel');
+
+    selStepAction.addEventListener('change', () => {
+      const act = selStepAction.value;
+      const meta = ACTION_MAP[act];
+      if (meta) {
+        unitStepLabel.innerText = meta.unit;
+        numStepVal.value = meta.defaultVal;
+        numStepVal.step = meta.step;
+        if (meta.unit === '°') {
+          numStepVal.min = '5';
+          numStepVal.max = '360';
+        } else if (meta.unit === 's') {
+          numStepVal.min = '0.1';
+          numStepVal.max = '60';
+        } else {
+          numStepVal.min = '0.05';
+          numStepVal.max = '50';
+        }
+      }
+    });
+
+    document.getElementById('btnAddStep').addEventListener('click', () => {
+      const act = selStepAction.value;
+      const val = parseFloat(numStepVal.value);
+      if (isNaN(val) || val <= 0) {
+        alert('Vui lòng nhập giá trị lớn hơn 0!');
+        return;
+      }
+      const meta = ACTION_MAP[act];
+      addMissionStep(act, val, `${meta.name} ${val}${meta.unit}`);
+    });
+
+    // Render danh sách bước mặc định ban đầu
+    renderMissionStepsList();
+    updateMissionUI();
+
+    // ==============================================================================
+    // KHỞI ĐỘNG ỨNG DỤNG
+    // ==============================================================================
+    resizeCanvas();
+    requestAnimationFrame(simLoop);
+
+  </script>
+</body>
+
+</html>
